@@ -1,14 +1,18 @@
 # SGC Frontend
 
-Proyecto frontend del **Sistema Web de Gestion de Condominios y Transparencia Financiera (SGC)**.
+Frontend del Sistema Web de Gestion de Condominios (SGC), desarrollado con React + Vite.
 
-Este repositorio contiene **solo frontend**. El backend Django se trabajara en un proyecto/carpeta separada.
+Este repositorio contiene solo frontend. El backend se encuentra en un proyecto separado (`sgc-backend`).
 
-## Objetivo de la fase actual
+## Estado actual
 
-- Migrar desde una `App` monolitica a una base escalable por capas.
-- Implementar enrutamiento por features.
-- Centralizar UI reutilizable y modelos base de dominio.
+La base actual ya incluye:
+
+- Arquitectura por capas (`app`, `pages`, `widgets`, `features`, `entities`, `shared`).
+- Router por features.
+- Autenticacion integrada con backend (register/login).
+- Guards de rutas para acceso publico/privado.
+- Sesion persistida en `localStorage` con JWT (`access`, `refresh`, `user`).
 
 ## Stack
 
@@ -18,37 +22,19 @@ Este repositorio contiene **solo frontend**. El backend Django se trabajara en u
 - React Router DOM 7
 - ESLint 9
 
-## Arquitectura frontend
+## Arquitectura
 
 ```text
 src/
-  app/         # bootstrap y router
-  pages/       # pantalla por ruta
-  widgets/     # bloques compuestos de UI
-  features/    # casos de uso
-  entities/    # dominio y acceso a datos por entidad
-  shared/      # UI kit, utilidades, config y cliente API
+  app/                    # bootstrap, provider de auth, router
+  pages/                  # paginas de login/register y modulos residentes
+  widgets/                # composicion de bloques visuales
+  features/               # casos de uso (auth, pagos, contacto)
+  entities/               # dominio y acceso a datos por entidad
+  shared/                 # ui kit, utilidades, cliente API y configuracion
 ```
 
-Reglas de dependencia:
-
-- `shared` no depende de otras capas.
-- `entities` depende de `shared`.
-- `features` depende de `entities/shared`.
-- `widgets` depende de `features/entities/shared`.
-- `pages` compone widgets/features/entities.
-- `app` orquesta rutas y providers.
-
-## Rutas actuales
-
-- `/resident/dashboard`
-- `/resident/pagos`
-- `/resident/perfil`
-- `/` y rutas no reconocidas redirigen a `/resident/dashboard`.
-
-## Aliases
-
-Definidos en `vite.config.js` y `jsconfig.json`:
+Aliases habilitados:
 
 - `@app/*`
 - `@pages/*`
@@ -57,6 +43,35 @@ Definidos en `vite.config.js` y `jsconfig.json`:
 - `@entities/*`
 - `@shared/*`
 
+## Flujo de autenticacion implementado
+
+1. Usuario se registra en `/register` (`POST /api/v1/auth/register`).
+2. Usuario inicia sesion en `/login` (`POST /api/v1/auth/login`).
+3. Frontend guarda `user`, `access`, `refresh` en almacenamiento local.
+4. Rutas privadas (`/resident/*`) quedan protegidas con `ProtectedRoute`.
+5. Rutas publicas (`/login`, `/register`) usan `PublicOnlyRoute`.
+
+## Rutas frontend
+
+- Publicas:
+  - `/login`
+  - `/register`
+  - `/unauthorized`
+- Privadas:
+  - `/resident/dashboard`
+  - `/resident/pagos`
+  - `/resident/perfil`
+
+## Configuracion
+
+Crear archivo `.env` (opcional) para apuntar al backend:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
+```
+
+Si no se define, usa por defecto `http://localhost:8000/api`.
+
 ## Ejecucion
 
 ```bash
@@ -64,18 +79,25 @@ npm install
 npm run dev
 ```
 
-## Validaciones
+## Validacion
 
 ```bash
 npm run lint
 npm run build
 ```
 
-## Cambios aplicados al original
+## Archivos clave de auth
 
-- Se reemplazo `App` monolitica por router + paginas por feature.
-- Se agrego `react-router-dom`.
-- Se migro UI base a `shared/ui`.
-- Se organizaron capas `app/pages/widgets/features/entities/shared`.
-- Se agregaron modelos base y cliente API en `shared/api`.
-- Se documentaron reglas de arquitectura y estado de la fase.
+- `src/features/auth/context/AuthProvider.jsx`
+- `src/features/auth/hooks/useAuth.js`
+- `src/features/auth/guards/ProtectedRoute.jsx`
+- `src/features/auth/guards/PublicOnlyRoute.jsx`
+- `src/features/auth/services/auth.service.js`
+- `src/pages/LoginPage.jsx`
+- `src/pages/RegisterPage.jsx`
+
+## Pendientes recomendados
+
+1. Agregar logout visible en layout.
+2. Implementar refresh automatico de token al expirar access token.
+3. Activar guard por rol real cuando backend exponga campo `role`.

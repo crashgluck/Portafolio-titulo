@@ -1,21 +1,25 @@
 # SGC Backend
 
-Backend base de SGC construido con Django REST Framework.
+Backend de SGC construido con Django + Django REST Framework.
 
-## Incluye
+Repositorio dedicado para API REST y logica de negocio. Actualmente enfocado en foundation de autenticacion para integracion con `sgc-frontend`.
 
-- Arquitectura por entornos (`base`, `dev`, `prod`)
-- Autenticacion con JWT
-- Registro de usuarios por email
-- Login por email/password
-- CORS listo para conectar el frontend en `http://localhost:5173`
-- Pruebas minimas de autenticacion
+## Estado actual
+
+Implementado:
+
+- Settings por entorno (`base`, `dev`, `prod`).
+- Usuario custom autenticado por email.
+- JWT (SimpleJWT) para login seguro.
+- Endpoints de auth versionados (`/api/v1/auth/*`).
+- CORS y CSRF configurados para frontend local.
+- Pruebas basicas de autenticacion.
 
 ## Stack
 
 - Django
 - Django REST Framework
-- SimpleJWT
+- djangorestframework-simplejwt
 - django-cors-headers
 - pytest + pytest-django
 
@@ -32,11 +36,12 @@ sgc-backend/
     urls.py
   users/
     migrations/
-    admin.py
+    managers.py
     models.py
     serializers.py
     urls.py
     views.py
+    tests/
   requirements/
     base.txt
     dev.txt
@@ -54,19 +59,18 @@ Copy-Item .env.example .env
 ## Migraciones y ejecucion
 
 ```powershell
-.\.venv\Scripts\python manage.py makemigrations
 .\.venv\Scripts\python manage.py migrate
 .\.venv\Scripts\python manage.py runserver
 ```
 
-## Endpoints
+## Endpoints disponibles
 
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/token/refresh`
 - `GET /api/v1/health`
 
-## Payloads
+## Payloads de integracion
 
 ### Register
 
@@ -89,8 +93,40 @@ Copy-Item .env.example .env
 }
 ```
 
+## Variables de entorno (.env)
+
+Base recomendada:
+
+```env
+DJANGO_ENV=development
+DJANGO_SECRET_KEY=sgc-dev-secret-key-2026-min-32-chars
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+
+DB_ENGINE=django.db.backends.sqlite3
+DB_NAME=db.sqlite3
+DB_USER=
+DB_PASSWORD=
+DB_HOST=
+DB_PORT=
+```
+
 ## Pruebas
 
 ```powershell
+.\.venv\Scripts\python manage.py check
 .\.venv\Scripts\python -m pytest
 ```
+
+## Pendientes recomendados
+
+1. Endpoint `GET /api/v1/auth/me`.
+2. Modelo de roles (`superadmin`, `admin`, `conserje`, `residente`).
+3. Modulos de negocio: condominios, unidades, medidores, pagos, reservas y reportes.
+
+## MER de Base de Datos
+
+- Documento completo: docs/MER.md
+- Incluye MER actual (implementado) y MER futuro (proyectado).
