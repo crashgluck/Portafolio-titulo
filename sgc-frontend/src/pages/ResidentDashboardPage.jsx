@@ -8,15 +8,37 @@ import {
   QuickActionsSection,
   ResidentOverviewSection,
 } from '@widgets/resident-dashboard'
+
+// 1. ELIMINAMOS 'residentProfiles' DE ESTA IMPORTACIÓN
 import {
   paymentHistoryColumns,
   paymentHistoryData,
   residentNavItems,
-  residentProfiles,
 } from '@features/resident-dashboard/data/dashboardData'
+
+// 2. IMPORTAMOS EL HOOK DE AUTENTICACIÓN
+import useAuth from '@features/auth/hooks/useAuth'
 
 const ResidentDashboardPage = () => {
   const navigate = useNavigate()
+  
+  // 3. EXTRAEMOS EL USUARIO REAL DE LA SESIÓN
+  const { user } = useAuth()
+
+  // 4. CONSTRUIMOS LOS DATOS REALES
+  // Si 'user' existe, armamos su nombre completo. Si no, mostramos un texto de carga.
+  const realName = user ? `${user.first_name} ${user.last_name}` : 'Cargando perfil...'
+
+  // Creamos la estructura de datos que tu componente <ResidentOverviewSection> espera leer,
+  // pero ahora inyectando las variables reales de Django (user.email, realName, etc.)
+  const dynamicProfileData = [{
+    id: user?.id || 1,
+    name: realName,
+    role: 'Residente', 
+    extraInfo: user?.email || 'Sin correo registrado',
+    status: 'Al día', // Más adelante esto vendrá de la tabla GastoComun
+    balance: '$0'     // Más adelante esto vendrá de la tabla Departamento
+  }]
 
   const handleDownloadNotice = () => {
     window.print()
@@ -25,12 +47,14 @@ const ResidentDashboardPage = () => {
   return (
     <DashboardLayout
       userRole="Residente"
-      userName="Juan Perez"
+      userName={realName} // <-- Inyectamos el nombre real en el Layout (Barra superior)
       title="Portal Residente"
       navItems={residentNavItems}
     >
       <div className="max-w-7xl mx-auto pb-12">
-        <ResidentOverviewSection profiles={residentProfiles} />
+        
+        {/* 5. INYECTAMOS LOS DATOS REALES EN LA TARJETA PRINCIPAL */}
+        <ResidentOverviewSection profiles={dynamicProfileData} />
 
         <QuickActionsSection
           onDownloadNotice={handleDownloadNotice}
