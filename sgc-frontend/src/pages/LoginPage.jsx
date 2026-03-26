@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import AuthLayout from '@features/auth/components/AuthLayout'
 import useAuth from '@features/auth/hooks/useAuth'
+import { getHomeRouteByRole } from '@features/auth/model/roleRedirect'
 import FormInput from '@shared/ui/FormInput'
 import { APP_ROUTES } from '@app/routes'
 
@@ -15,7 +16,7 @@ const LoginPage = () => {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const from = location.state?.from?.pathname || APP_ROUTES.residentDashboard
+  const from = location.state?.from?.pathname
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -23,8 +24,9 @@ const LoginPage = () => {
     setIsSubmitting(true)
 
     try {
-      await login({ email, password })
-      navigate(from, { replace: true })
+      const session = await login({ email, password })
+      const fallbackRoute = getHomeRouteByRole(session?.user?.role)
+      navigate(from || fallbackRoute, { replace: true })
     } catch (submitError) {
       setError(submitError.message || 'No fue posible iniciar sesion.')
     } finally {

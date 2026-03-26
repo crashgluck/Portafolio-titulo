@@ -1,12 +1,12 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
-import { APP_ROUTES } from '@app/routes'
+import { getHomeRouteByRole } from '../model/roleRedirect'
 
 const PublicOnlyRoute = () => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
 
   if (isAuthenticated) {
-    return <Navigate to={APP_ROUTES.residentDashboard} replace />
+    return <Navigate to={getHomeRouteByRole(user?.role)} replace />
   }
 
   return <Outlet />

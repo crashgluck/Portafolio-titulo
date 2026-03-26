@@ -2,8 +2,41 @@ import { API_CONFIG } from '../config/api'
 
 const createUrl = (path) => `${API_CONFIG.baseUrl}${path}`
 
+const parseApiError = async (response) => {
+  let message = `Error API (${response.status})`
+
+  try {
+    const data = await response.json()
+
+    if (typeof data === 'string') {
+      return data
+    }
+
+    if (data.detail) {
+      return data.detail
+    }
+
+    const firstEntry = Object.entries(data || {})[0]
+    if (!firstEntry) {
+      return message
+    }
+
+    const [, value] = firstEntry
+    if (Array.isArray(value)) {
+      return String(value[0])
+    }
+
+    if (typeof value === 'string') {
+      return value
+    }
+
+    return message
+  } catch {
+    return message
+  }
+}
+
 const request = async (path, options = {}) => {
-  // Timeout defensivo para evitar requests colgadas en UI.
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeoutMs)
 
@@ -20,14 +53,7 @@ const request = async (path, options = {}) => {
     })
 
     if (!response.ok) {
-      // Se centraliza el error para manejarlo desde features/pages.
-      let message = `Error API (${response.status})`
-      try {
-        const data = await response.json()
-        message = data.detail || data.message || message
-      } catch {
-        // Si no viene JSON, conservamos el mensaje default.
-      }
+      const message = await parseApiError(response)
       throw new Error(message)
     }
 
@@ -43,5 +69,7 @@ const request = async (path, options = {}) => {
 
 const apiGet = async (path, options = {}) => request(path, { ...options, method: 'GET' })
 const apiPost = async (path, body, options = {}) => request(path, { ...options, method: 'POST', body })
+const apiPatch = async (path, body, options = {}) => request(path, { ...options, method: 'PATCH', body })
+const apiDelete = async (path, options = {}) => request(path, { ...options, method: 'DELETE' })
 
-export { apiGet, apiPost }
+export { apiDelete, apiGet, apiPatch, apiPost }

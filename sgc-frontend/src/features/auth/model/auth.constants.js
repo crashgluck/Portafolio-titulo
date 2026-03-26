@@ -11,4 +11,8 @@ export const AUTH_ENDPOINTS = {
   refresh: '/v1/auth/token/refresh',
 }
 
+export const USER_ENDPOINTS = {
+  base: '/v1/users/',
+}
+
 export const AUTH_STORAGE_KEY = 'sgc.auth'

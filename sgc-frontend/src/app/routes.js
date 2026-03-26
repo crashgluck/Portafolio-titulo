@@ -5,11 +5,11 @@ export const APP_ROUTES = {
   register: '/register',
   unauthorized: '/unauthorized',
 
-  //Residente
   residentDashboard: '/resident/dashboard',
   residentPayments: '/resident/pagos',
   residentProfile: '/resident/perfil',
 
-  //SuperAdmin
+  adminDashboard: '/admin/dashboard',
+  conserjeDashboard: '/conserje/dashboard',
   superadminDashboard: '/superadmin/dashboard',
 }
