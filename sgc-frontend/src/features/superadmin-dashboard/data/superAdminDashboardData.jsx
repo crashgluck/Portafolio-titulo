@@ -1,32 +1,18 @@
 import { APP_ROUTES } from '@app/routes'
+import { USER_ROLES } from '@features/auth/model/auth.constants'
 
-// 1. Items de menú para el rol "SuperAdmin"
-export const superAdminNavItems = [
+const superAdminNavItems = [
   {
-    label: 'Gestión de Usuarios',
+    label: 'Gestion de usuarios',
     to: APP_ROUTES.superadminDashboard,
   },
-  {
-    label: 'Configuración Global',
-    to: '/superadmin/configuracion', // despues lo agregaremos a APP_ROUTES
-  }
 ]
 
-// 2. Opciones para el formulario
-export const roleOptions = ['Residente', 'Contabilidad', 'Conserje', 'SuperAdmin']
-
-// 3. Estilos visuales para los roles 
-export const roleStyles = {
-  'SuperAdmin': 'bg-red-100 text-red-800 border border-red-200',
-  'Contabilidad': 'bg-blue-100 text-blue-800 border border-blue-200',
-  'Conserje': 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-  'Residente': 'bg-stone-100 text-stone-800 border border-stone-200',
-}
-
-// 4. Datos mock iniciales de usuarios
-// despues se conectará a @entities/user/model 
-export const initialMockUsers = [
-  { id: 1, rut: '11.111.111-1', nombre: 'Juan Pérez', email: 'juan@correo.com', rol: 'Residente' },
-  { id: 2, rut: '22.222.222-2', nombre: 'Ana Gómez', email: 'ana@correo.com', rol: 'Contabilidad' },
-  { id: 3, rut: '33.333.333-3', nombre: 'Carlos Ruiz', email: 'carlos@correo.com', rol: 'Conserje' },
+const roleOptions = [
+  { value: USER_ROLES.superadmin, label: 'Super Admin' },
+  { value: USER_ROLES.admin, label: 'Administrador' },
+  { value: USER_ROLES.conserje, label: 'Conserje' },
+  { value: USER_ROLES.residente, label: 'Residente' },
 ]
+
+export { roleOptions, superAdminNavItems }

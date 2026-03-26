@@ -2,19 +2,30 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import AuthLayout from '@features/auth/components/AuthLayout'
 import useAuth from '@features/auth/hooks/useAuth'
+import { USER_ROLES } from '@features/auth/model/auth.constants'
+import { getHomeRouteByRole } from '@features/auth/model/roleRedirect'
 import FormInput from '@shared/ui/FormInput'
 import { APP_ROUTES } from '@app/routes'
+
+const roleOptions = [
+  { value: USER_ROLES.residente, label: 'Residente' },
+  { value: USER_ROLES.conserje, label: 'Conserje' },
+  { value: USER_ROLES.admin, label: 'Administrador' },
+  { value: USER_ROLES.superadmin, label: 'Super Admin' },
+]
 
 const RegisterPage = () => {
   const navigate = useNavigate()
   const { register } = useAuth()
 
   const [formData, setFormData] = useState({
+    rut: '',
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     passwordConfirmation: '',
+    role: USER_ROLES.residente,
   })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -35,8 +46,8 @@ const RegisterPage = () => {
     setIsSubmitting(true)
 
     try {
-      await register(formData)
-      navigate(APP_ROUTES.residentDashboard, { replace: true })
+      const session = await register(formData)
+      navigate(getHomeRouteByRole(session?.user?.role), { replace: true })
     } catch (submitError) {
       setError(submitError.message || 'No fue posible registrar la cuenta.')
     } finally {
@@ -59,6 +70,13 @@ const RegisterPage = () => {
     >
       <form onSubmit={handleSubmit}>
         <FormInput
+          label="RUT"
+          value={formData.rut}
+          onChange={handleChange('rut')}
+          placeholder="12.345.678-9"
+          required
+        />
+        <FormInput
           label="Nombre"
           value={formData.firstName}
           onChange={handleChange('firstName')}
@@ -80,6 +98,23 @@ const RegisterPage = () => {
           placeholder="usuario@correo.com"
           required
         />
+
+        <label htmlFor="role" className="mb-1.5 text-sm font-semibold text-stone-700 flex items-center gap-1">
+          Rol
+        </label>
+        <select
+          id="role"
+          value={formData.role}
+          onChange={handleChange('role')}
+          className="w-full px-4 py-2.5 rounded-lg border bg-stone-50 text-stone-900 border-stone-200 hover:border-amber-600 focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500/30 mb-4"
+        >
+          {roleOptions.map((role) => (
+            <option key={role.value} value={role.value}>
+              {role.label}
+            </option>
+          ))}
+        </select>
+
         <FormInput
           label="Contrasena"
           type="password"

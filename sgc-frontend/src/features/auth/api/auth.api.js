@@ -1,13 +1,15 @@
 import { apiPost } from '@shared/api/client'
 import { AUTH_ENDPOINTS } from '../model/auth.constants'
 
-const registerRequest = async ({ email, password, passwordConfirmation, firstName, lastName }) => {
+const registerRequest = async ({ email, rut, password, passwordConfirmation, firstName, lastName, role }) => {
   return apiPost(AUTH_ENDPOINTS.register, {
     email,
+    rut,
     password,
     password_confirmation: passwordConfirmation,
     first_name: firstName,
     last_name: lastName,
+    role,
   })
 }
 

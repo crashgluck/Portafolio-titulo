@@ -1,34 +1,49 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from '@features/auth/guards/ProtectedRoute'
 import PublicOnlyRoute from '@features/auth/guards/PublicOnlyRoute'
+import HomeRedirect from '@features/auth/guards/HomeRedirect'
+import { USER_ROLES } from '@features/auth/model/auth.constants'
 import LoginPage from '@pages/LoginPage'
 import RegisterPage from '@pages/RegisterPage'
 import ResidentDashboardPage from '@pages/ResidentDashboardPage'
 import ResidentPaymentsPage from '@pages/ResidentPaymentsPage'
 import ResidentProfilePage from '@pages/ResidentProfilePage'
-import UnauthorizedPage from '@pages/UnauthorizedPage'
+import AdminDashboardPage from '@pages/AdminDashboardPage'
+import ConserjeDashboardPage from '@pages/ConserjeDashboardPage'
 import SuperAdminDashboardPage from '@pages/SuperAdminDashboardPage'
+import UnauthorizedPage from '@pages/UnauthorizedPage'
 import { APP_ROUTES } from './routes'
 
 const AppRouter = () => {
   return (
     <Routes>
-      <Route path={APP_ROUTES.home} element={<Navigate to={APP_ROUTES.residentDashboard} replace />} />
+      <Route path={APP_ROUTES.home} element={<HomeRedirect />} />
 
       <Route element={<PublicOnlyRoute />}>
         <Route path={APP_ROUTES.login} element={<LoginPage />} />
         <Route path={APP_ROUTES.register} element={<RegisterPage />} />
       </Route>
 
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.residente]} />}>
         <Route path={APP_ROUTES.residentDashboard} element={<ResidentDashboardPage />} />
         <Route path={APP_ROUTES.residentPayments} element={<ResidentPaymentsPage />} />
         <Route path={APP_ROUTES.residentProfile} element={<ResidentProfilePage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.admin]} />}>
+        <Route path={APP_ROUTES.adminDashboard} element={<AdminDashboardPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.conserje]} />}>
+        <Route path={APP_ROUTES.conserjeDashboard} element={<ConserjeDashboardPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.superadmin]} />}>
         <Route path={APP_ROUTES.superadminDashboard} element={<SuperAdminDashboardPage />} />
       </Route>
 
       <Route path={APP_ROUTES.unauthorized} element={<UnauthorizedPage />} />
-      <Route path="*" element={<Navigate to={APP_ROUTES.residentDashboard} replace />} />
+      <Route path="*" element={<Navigate to={APP_ROUTES.home} replace />} />
     </Routes>
   )
 }
