@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import useAuth from '@features/auth/hooks/useAuth'
 import backgroundImage from '../../assets/condominio.jpg'
 
 const DashboardLayout = ({ children, userRole, userName, title, navItems = [] }) => {
@@ -9,37 +10,42 @@ const DashboardLayout = ({ children, userRole, userName, title, navItems = [] })
   const safeRole = userRole?.trim() || 'Perfil'
   const safeTitle = title?.trim() || `Portal ${safeRole}`
 
+  // LOGOUT
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   const normalizedNavItems = useMemo(() => {
-    // Fallback para no dejar sidebar vacio si una pagina no envia items.
     if (!Array.isArray(navItems) || navItems.length === 0) {
       return [{ label: 'Panel principal', to: '/' }]
     }
-
     return navItems
   }, [navItems])
 
   return (
     <div className="relative flex h-screen w-screen overflow-hidden text-stone-900">
-      {/* Fondo visual global del portal */}
+      {/* Fondo visual global */}
       <div className="absolute inset-0">
         <img src={backgroundImage} alt="Fondo condominio" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-br from-stone-950/40 via-stone-950/20 to-amber-950/35" />
       </div>
 
       <div className="relative z-10 flex h-full w-full flex-col backdrop-blur-[1px]">
-        {/* Header superior con identidad y resumen de usuario */}
+        {/* Header superior */}
         <header className="h-[70px] bg-stone-50/95 border-b border-stone-200 flex justify-between items-center px-4 md:px-6 shrink-0 shadow-sm">
           <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
             <button
               onClick={() => setIsSidebarOpen((prev) => !prev)}
               className="p-2 rounded-md hover:bg-stone-200 text-stone-800 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
-              aria-label="Alternar menu lateral"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-
             <h1 className="m-0 text-xl md:text-2xl font-black text-stone-900 tracking-[0.2em] hidden sm:block select-none">SGC</h1>
           </div>
 
@@ -67,7 +73,7 @@ const DashboardLayout = ({ children, userRole, userName, title, navItems = [] })
         </header>
 
         <div className="flex flex-1 overflow-hidden relative">
-          {/* Sidebar de navegacion por modulos/feature */}
+          {/* Sidebar lateral */}
           <aside
             className={`bg-stone-900/95 border-r border-stone-700/50 flex flex-col transition-all duration-300 ease-in-out shadow-xl z-20 overflow-hidden shrink-0 ${
               isSidebarOpen ? 'w-64 absolute sm:relative h-full' : 'w-0 sm:w-20'
@@ -92,6 +98,20 @@ const DashboardLayout = ({ children, userRole, userName, title, navItems = [] })
                 ))}
               </ul>
             </nav>
+
+            {/* --- ZONA INFERIOR DEL SIDEBAR: BOTÓN SALIR --- */}
+            <div className="p-4 border-t border-stone-700/50 shrink-0 mt-auto">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-lg hover:bg-red-500/10 text-stone-400 hover:text-red-400 transition-colors focus:outline-none group"
+                title="Cerrar sesión"
+              >
+                <svg className="w-5 h-5 shrink-0 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                {isSidebarOpen && <span className="font-medium whitespace-nowrap">Cerrar Sesión</span>}
+              </button>
+            </div>
           </aside>
 
           {isSidebarOpen && (
@@ -99,28 +119,12 @@ const DashboardLayout = ({ children, userRole, userName, title, navItems = [] })
           )}
 
           <div className="flex-1 flex flex-col overflow-y-auto relative bg-stone-50/90 backdrop-blur-sm">
-            {/* Titulo contextual de la pagina */}
             <div className="px-4 md:px-8 py-4 md:py-5 border-b border-stone-200 shrink-0 sticky top-0 z-10 bg-stone-50/95">
               <h2 className="m-0 text-stone-900 font-bold text-lg md:text-xl uppercase tracking-wide truncate">{safeTitle}</h2>
             </div>
-
             <main className="p-4 md:p-8 flex-1">
               <div className="max-w-7xl mx-auto">{children}</div>
             </main>
-
-            {/* Footer comun para todas las paginas autenticadas */}
-            <footer className="bg-stone-900 text-stone-300 py-8 px-8 shrink-0 border-t border-stone-700/50 mt-auto z-10">
-              <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
-                <div>
-                  <h3 className="text-stone-100 font-bold text-lg tracking-widest mb-1">SGC</h3>
-                  <p className="text-sm text-stone-400">Sistema web de gestion de condominios</p>
-                </div>
-                <div className="flex gap-6 text-sm font-medium">
-                  <span className="cursor-pointer hover:text-amber-300 transition-colors">Soporte tecnico</span>
-                  <span className="cursor-pointer hover:text-amber-300 transition-colors">Contacto</span>
-                </div>
-              </div>
-            </footer>
           </div>
         </div>
       </div>
