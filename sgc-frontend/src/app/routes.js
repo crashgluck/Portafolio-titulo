@@ -4,7 +4,12 @@ export const APP_ROUTES = {
   login: '/login',
   register: '/register',
   unauthorized: '/unauthorized',
+
+  //Residente
   residentDashboard: '/resident/dashboard',
   residentPayments: '/resident/pagos',
   residentProfile: '/resident/perfil',
+
+  //SuperAdmin
+  superadminDashboard: '/superadmin/dashboard',
 }
