@@ -1,9 +1,18 @@
-from rest_framework import permissions, status
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import AuthResponseSerializer, LoginSerializer, RegisterSerializer
+from .permissions import IsSuperAdmin
+from .models import User
+from .serializers import (
+    AuthResponseSerializer,
+    LoginSerializer,
+    RegisterSerializer,
+    UserCreateSerializer,
+    UserSerializer,
+    UserUpdateSerializer,
+)
 
 
 class RegisterAPIView(APIView):
@@ -29,3 +38,23 @@ class LoginAPIView(APIView):
 
 class RefreshTokenAPIView(TokenRefreshView):
     permission_classes = (permissions.AllowAny,)
+
+
+class UserListCreateAPIView(generics.ListCreateAPIView):
+    permission_classes = (IsSuperAdmin,)
+    queryset = User.objects.all().order_by('id')
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return UserCreateSerializer
+        return UserSerializer
+
+
+class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsSuperAdmin,)
+    queryset = User.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return UserUpdateSerializer
+        return UserSerializer
