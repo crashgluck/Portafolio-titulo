@@ -1,0 +1,1 @@
+export { default as UserManagementSection } from '@features/superadmin-dashboard/components/UserManagementSection'

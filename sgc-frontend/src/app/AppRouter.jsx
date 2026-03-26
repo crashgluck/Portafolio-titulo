@@ -7,6 +7,7 @@ import ResidentDashboardPage from '@pages/ResidentDashboardPage'
 import ResidentPaymentsPage from '@pages/ResidentPaymentsPage'
 import ResidentProfilePage from '@pages/ResidentProfilePage'
 import UnauthorizedPage from '@pages/UnauthorizedPage'
+import SuperAdminDashboardPage from '@pages/SuperAdminDashboardPage'
 import { APP_ROUTES } from './routes'
 
 const AppRouter = () => {
@@ -23,6 +24,7 @@ const AppRouter = () => {
         <Route path={APP_ROUTES.residentDashboard} element={<ResidentDashboardPage />} />
         <Route path={APP_ROUTES.residentPayments} element={<ResidentPaymentsPage />} />
         <Route path={APP_ROUTES.residentProfile} element={<ResidentProfilePage />} />
+        <Route path={APP_ROUTES.superadminDashboard} element={<SuperAdminDashboardPage />} />
       </Route>
 
       <Route path={APP_ROUTES.unauthorized} element={<UnauthorizedPage />} />
