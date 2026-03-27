@@ -3,15 +3,21 @@ import ProtectedRoute from '@features/auth/guards/ProtectedRoute'
 import PublicOnlyRoute from '@features/auth/guards/PublicOnlyRoute'
 import HomeRedirect from '@features/auth/guards/HomeRedirect'
 import { USER_ROLES } from '@features/auth/model/auth.constants'
+
+// Imports de páginas
 import LoginPage from '@pages/LoginPage'
 import RegisterPage from '@pages/RegisterPage'
 import ResidentDashboardPage from '@pages/ResidentDashboardPage'
 import ResidentPaymentsPage from '@pages/ResidentPaymentsPage'
 import ResidentProfilePage from '@pages/ResidentProfilePage'
-import AdminDashboardPage from '@pages/AdminDashboardPage'
 import ConserjeDashboardPage from '@pages/ConserjeDashboardPage'
 import SuperAdminDashboardPage from '@pages/SuperAdminDashboardPage'
 import UnauthorizedPage from '@pages/UnauthorizedPage'
+import AdminDashboardPage from '@pages/AdminDashboardPage'
+import AdminPagosPage from '@pages/AdminPagosPage'
+import AdminEstadoCuentaPage from '@pages/AdminEstadoCuentaPage'
+import AdminCierreMesPage from '@pages/AdminCierreMesPage'
+
 import { APP_ROUTES } from './routes'
 
 const AppRouter = () => {
@@ -32,6 +38,9 @@ const AppRouter = () => {
 
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.admin]} />}>
         <Route path={APP_ROUTES.adminDashboard} element={<AdminDashboardPage />} />
+        <Route path={APP_ROUTES.adminPayments} element={<AdminPagosPage />} />
+        <Route path={APP_ROUTES.adminStatement} element={<AdminEstadoCuentaPage />} />
+        <Route path={APP_ROUTES.adminMonthClose} element={<AdminCierreMesPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.conserje]} />}>
