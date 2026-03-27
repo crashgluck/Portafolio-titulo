@@ -2,37 +2,40 @@ import { API_CONFIG } from '../config/api'
 
 const createUrl = (path) => `${API_CONFIG.baseUrl}${path}`
 
+// NUEVO: Ahora parseApiError devuelve el texto simple Y el objeto completo (rawData)
 const parseApiError = async (response) => {
   let message = `Error API (${response.status})`
+  let rawData = {}
 
   try {
     const data = await response.json()
+    rawData = data // Guardamos la respuesta intacta de Django aquí
 
     if (typeof data === 'string') {
-      return data
+      return { message: data, rawData }
     }
 
     if (data.detail) {
-      return data.detail
+      return { message: data.detail, rawData }
     }
 
     const firstEntry = Object.entries(data || {})[0]
     if (!firstEntry) {
-      return message
+      return { message, rawData }
     }
 
     const [, value] = firstEntry
     if (Array.isArray(value)) {
-      return String(value[0])
+      return { message: String(value[0]), rawData }
     }
 
     if (typeof value === 'string') {
-      return value
+      return { message: value, rawData }
     }
 
-    return message
+    return { message, rawData }
   } catch {
-    return message
+    return { message, rawData }
   }
 }
 
@@ -53,8 +56,11 @@ const request = async (path, options = {}) => {
     })
 
     if (!response.ok) {
-      const message = await parseApiError(response)
-      throw new Error(message)
+      // NUEVO: manejar error para sginarlo a su textarea especifco
+      const { message, rawData } = await parseApiError(response)
+      const error = new Error(message)
+      error.fieldErrors = rawData 
+      throw error
     }
 
     if (response.status === 204) {
