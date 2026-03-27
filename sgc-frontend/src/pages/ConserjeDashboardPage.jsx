@@ -1,11 +1,24 @@
-import RoleWelcomePage from './RoleWelcomePage'
+import DashboardLayout from '@shared/ui/DashboardLayout'
+import IngresoMedidores from '@features/conserje-dashboard/components/IngresoMedidores'
+import { conserjeNavItems } from '@features/conserje-dashboard/data/conserjeDashboardData'
 
 const ConserjeDashboardPage = () => {
   return (
-    <RoleWelcomePage
-      title="Perfil Conserje"
-      subtitle="Aqui registraras lecturas, eventos operativos y apoyo de control diario."
-    />
+    <DashboardLayout 
+      navItems={conserjeNavItems} 
+      title="Perfil Conserjería"
+    >
+      <div className="w-full max-w-5xl mx-auto pb-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-stone-900">Ronda de Medidores</h2>
+          <p className="text-stone-500 mt-1">
+            Ingresa las lecturas mensuales. El sistema calculará el consumo y lo enviará a contabilidad.
+          </p>
+        </div>
+
+        <IngresoMedidores />
+      </div>
+    </DashboardLayout>
   )
 }
 
