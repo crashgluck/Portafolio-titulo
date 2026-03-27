@@ -3,8 +3,12 @@ import { APP_ROUTES } from '@app/routes'
 // Menú lateral exclusivo para el Conserje
 export const conserjeNavItems = [
   { 
-    label: 'Lectura Medidores', 
+    label: 'Mi Perfil', 
     to: APP_ROUTES.conserjeDashboard 
+  },
+  { 
+    label: 'Lectura Medidores', 
+    to: APP_ROUTES.conserjeMedidores 
   }
 ]
 

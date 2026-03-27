@@ -1,23 +1,22 @@
 import DashboardLayout from '@shared/ui/DashboardLayout'
-// NUEVO: Usamos el alias @features en lugar de rutas relativas con puntitos
-import ResumenFinanciero from '@features/admin-dashboard/components/ResumenFinanciero'
+import AdminProfile from '@features/admin-dashboard/components/AdminProfile'
 import { adminNavItems } from '@features/admin-dashboard/data/adminDashboardData'
 
 const AdminDashboardPage = () => {
   return (
     <DashboardLayout 
       navItems={adminNavItems} 
-      title="Perfil Contabilidad"
+      title="Inicio - Contabilidad"
     >
-      <div className="w-full max-w-7xl mx-auto pb-8">
+      <div className="w-full max-w-6xl mx-auto pb-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-stone-900">Panel Financiero</h2>
+          <h2 className="text-2xl font-bold text-stone-900">Bienvenido/a</h2>
           <p className="text-stone-500 mt-1">
-            Transparencia financiera y gestión de gastos comunes de la comunidad.
+            Desde aquí puedes acceder a todas tus herramientas de gestión.
           </p>
         </div>
 
-        <ResumenFinanciero />
+        <AdminProfile />
       </div>
     </DashboardLayout>
   )

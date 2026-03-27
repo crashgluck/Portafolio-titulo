@@ -67,8 +67,12 @@ export const expenseStatusOptions = [
 // Opciones del menú lateral para el rol Admin (Contabilidad)
 export const adminNavItems = [
   { 
-    label: 'Resumen Financiero', 
+    label: 'Mi Perfil', 
     to: APP_ROUTES.adminDashboard 
+  },
+  { 
+    label: 'Resumen Financiero', 
+    to: APP_ROUTES.adminResumen 
   },
   { 
     label: 'Validar Pagos', 

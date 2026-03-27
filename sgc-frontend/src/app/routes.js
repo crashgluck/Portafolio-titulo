@@ -10,10 +10,15 @@ export const APP_ROUTES = {
   residentProfile: '/resident/perfil',
 
   adminDashboard: '/admin/dashboard',
+  adminResumen: '/admin/resumen',
   adminPayments: '/admin/pagos',
   adminStatement: '/admin/estado-cuenta',
   adminMonthClose: '/admin/cierre-mes',
+  
   conserjeDashboard: '/conserje/dashboard',
+  conserjeMedidores: '/conserje/medidores',
+
   superadminDashboard: '/superadmin/dashboard',
+  superadminUsers: '/superadmin/usuarios',
   
 }
