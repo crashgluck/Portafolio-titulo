@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom' // <-- AÑADIDO
 import useAuth from '@features/auth/hooks/useAuth'
 import { toBadgeClass } from '@entities/user/model/user.mapper'
 import { createUser, deleteUser, listUsers, updateUser } from '../services/userManagement.service'
@@ -18,6 +19,7 @@ const emptyForm = {
 
 const UserManagementSection = () => {
   const { accessToken } = useAuth()
+  const location = useLocation() // <-- AÑADIDO para interceptar el state
 
   const [users, setUsers] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -31,7 +33,7 @@ const UserManagementSection = () => {
   const [formData, setFormData] = useState(emptyForm)
   const [isSaving, setIsSaving] = useState(false)
 
-  // --- NUEVO: ESTADOS PARA LOS OJITOS DE CONTRASEÑA ---
+  // --- ESTADOS PARA LOS OJITOS DE CONTRASEÑA ---
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false)
 
@@ -59,21 +61,32 @@ const UserManagementSection = () => {
     }
   }, [accessToken])
 
+  // --- AÑADIDO: Envuelto en useCallback para poder usarlo en el useEffect sin warnings ---
+  const openCreateModal = useCallback(() => {
+    setModalMode('create')
+    setFormData(emptyForm)
+    setError('')
+    setFieldErrors({})
+    setShowPassword(false)
+    setShowPasswordConfirmation(false)
+    setIsModalOpen(true)
+  }, [])
+
   useEffect(() => {
     if (accessToken) {
       loadUsers()
     }
   }, [accessToken, loadUsers])
 
-  const openCreateModal = () => {
-    setModalMode('create')
-    setFormData(emptyForm)
-    setError('')
-    setFieldErrors({})
-    setShowPassword(false) // Reiniciamos el ojito
-    setShowPasswordConfirmation(false)
-    setIsModalOpen(true)
-  }
+  // --- AÑADIDO: EFECTO QUE ESCUCHA EL MENSAJE DEL PERFIL ---
+  useEffect(() => {
+    if (location.state?.openCreateModal) {
+      openCreateModal()
+      
+      // Limpiamos el state para que el modal no vuelva a aparecer solo si se hace refresh
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state, openCreateModal])
 
   const openEditModal = (user) => {
     setModalMode('edit')
@@ -90,7 +103,7 @@ const UserManagementSection = () => {
     })
     setError('')
     setFieldErrors({})
-    setShowPassword(false) // Reiniciamos el ojito
+    setShowPassword(false)
     setShowPasswordConfirmation(false)
     setIsModalOpen(true)
   }
@@ -193,7 +206,6 @@ const UserManagementSection = () => {
     })
   }, [users, searchTerm, roleFilter])
 
-  // Modificamos ligeramente la clase para darle padding derecho a la caja (para que no se pise el texto con el ojito)
   const getInputClass = (fieldName) => {
     const baseClass = "w-full px-3 py-2 border rounded-lg outline-none transition-all "
     return fieldErrors[fieldName] 
@@ -360,7 +372,6 @@ const UserManagementSection = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* --- NUEVO: CONTENEDOR RELATIVO PARA EL OJITO (CONTRASEÑA) --- */}
                   <div>
                     <label className="block text-sm font-semibold text-stone-700 mb-1">Contraseña</label>
                     <div className="relative">
@@ -387,7 +398,6 @@ const UserManagementSection = () => {
                     {fieldErrors.password && <p className="text-xs text-red-500 mt-1.5 font-semibold">{fieldErrors.password[0]}</p>}
                   </div>
 
-                  {/* --- NUEVO: CONTENEDOR RELATIVO PARA EL OJITO (CONFIRMAR CONTRASEÑA) --- */}
                   <div>
                     <label className="block text-sm font-semibold text-stone-700 mb-1">Confirmar contraseña</label>
                     <div className="relative">
