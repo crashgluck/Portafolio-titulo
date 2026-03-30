@@ -17,7 +17,7 @@ import AdminDashboardPage from '@pages/AdminDashboardPage'
 import AdminPagosPage from '@pages/AdminPagosPage'
 import AdminEstadoCuentaPage from '@pages/AdminEstadoCuentaPage'
 import AdminCierreMesPage from '@pages/AdminCierreMesPage'
-
+import SuperAdminReservationsPage from '@pages/SuperAdminReservationsPage'
 import { APP_ROUTES } from './routes'
 
 const AppRouter = () => {
@@ -49,7 +49,9 @@ const AppRouter = () => {
 
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.superadmin]} />}>
         <Route path={APP_ROUTES.superadminDashboard} element={<SuperAdminDashboardPage />} />
+        <Route path={APP_ROUTES.superadminReservations} element={<SuperAdminReservationsPage />} />
       </Route>
+
 
       <Route path={APP_ROUTES.unauthorized} element={<UnauthorizedPage />} />
       <Route path="*" element={<Navigate to={APP_ROUTES.home} replace />} />

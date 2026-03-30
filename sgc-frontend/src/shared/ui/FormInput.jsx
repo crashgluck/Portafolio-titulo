@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 
 const FormInput = ({
   id,
+  name,
   label,
   type = 'text',
   placeholder = '',
@@ -35,6 +36,7 @@ const FormInput = ({
       <div className="relative w-full">
         <input
           id={safeId}
+          name={name}
           type={currentType}
           placeholder={placeholder}
           value={value}

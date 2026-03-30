@@ -6,6 +6,10 @@ const superAdminNavItems = [
     label: 'Gestion de usuarios',
     to: APP_ROUTES.superadminDashboard,
   },
+  {
+    label: 'Gestión de reservas',
+    to: APP_ROUTES.superadminReservations,
+  }
 ]
 
 const roleOptions = [

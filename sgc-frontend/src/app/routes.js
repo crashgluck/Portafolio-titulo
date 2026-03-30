@@ -15,5 +15,7 @@ export const APP_ROUTES = {
   adminMonthClose: '/admin/cierre-mes',
   conserjeDashboard: '/conserje/dashboard',
   superadminDashboard: '/superadmin/dashboard',
+  superadminReservations: '/superadmin/reservas',
+
   
 }
