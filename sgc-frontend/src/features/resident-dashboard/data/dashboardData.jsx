@@ -16,6 +16,10 @@ export const residentNavItems = [
     label: 'Mi perfil',
     to: APP_ROUTES.residentProfile,
   },
+  { 
+    label: 'Reservas', 
+    to: APP_ROUTES.residentReservations,
+  },
 ]
 
 // Mock transformado desde la capa de entidad.

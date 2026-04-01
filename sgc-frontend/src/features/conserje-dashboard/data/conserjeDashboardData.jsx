@@ -9,7 +9,11 @@ export const conserjeNavItems = [
   { 
     label: 'Lectura Medidores', 
     to: APP_ROUTES.conserjeMedidores 
-  }
+  },
+  { 
+    label: 'Reservas', 
+    to: APP_ROUTES.conserjeReservations,
+  },
 ]
 
 // Datos falsos de las lecturas que el conserje ya ingresó este mes

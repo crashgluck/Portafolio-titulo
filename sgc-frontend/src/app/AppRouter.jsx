@@ -5,15 +5,19 @@ import HomeRedirect from '@features/auth/guards/HomeRedirect'
 import { USER_ROLES } from '@features/auth/model/auth.constants'
 
 // Imports de páginas
+import WelcomePage from '@pages/WelcomePage'
+
 import LoginPage from '@pages/LoginPage'
 import RegisterPage from '@pages/RegisterPage'
 
 import ResidentDashboardPage from '@pages/ResidentDashboardPage'
 import ResidentPaymentsPage from '@pages/ResidentPaymentsPage'
 import ResidentProfilePage from '@pages/ResidentProfilePage'
+import ResidentReservationsPage from '@pages/ResidentReservationsPage'
 
 import ConserjeDashboardPage from '@pages/ConserjeDashboardPage'
 import ConserjeMedidoresPage from '@pages/ConserjeMedidoresPage'
+import ConserjeReservationsPage from '@pages/ConserjeReservationsPage'
 
 import SuperAdminDashboardPage from '@pages/SuperAdminDashboardPage'
 import SuperAdminUsersPage from '@pages/SuperAdminUsersPage'
@@ -31,7 +35,7 @@ import { APP_ROUTES } from './routes'
 const AppRouter = () => {
   return (
     <Routes>
-      <Route path={APP_ROUTES.home} element={<HomeRedirect />} />
+      <Route path={APP_ROUTES.home} element={<WelcomePage />} />
 
       <Route element={<PublicOnlyRoute />}>
         <Route path={APP_ROUTES.login} element={<LoginPage />} />
@@ -42,6 +46,7 @@ const AppRouter = () => {
         <Route path={APP_ROUTES.residentDashboard} element={<ResidentDashboardPage />} />
         <Route path={APP_ROUTES.residentPayments} element={<ResidentPaymentsPage />} />
         <Route path={APP_ROUTES.residentProfile} element={<ResidentProfilePage />} />
+        <Route path={APP_ROUTES.residentReservations} element={<ResidentReservationsPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.admin]} />}>
@@ -55,6 +60,7 @@ const AppRouter = () => {
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.conserje]} />}>
         <Route path={APP_ROUTES.conserjeDashboard} element={<ConserjeDashboardPage />} />
         <Route path={APP_ROUTES.conserjeMedidores} element={<ConserjeMedidoresPage />} />
+        <Route path={APP_ROUTES.conserjeReservations} element={<ConserjeReservationsPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.superadmin]} />}>
