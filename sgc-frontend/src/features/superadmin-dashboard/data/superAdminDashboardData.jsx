@@ -9,6 +9,8 @@ const superAdminNavItems = [
   {
     label: 'Gestión de reservas',
     to: APP_ROUTES.superadminReservations,
+
+    },
   { 
     label: 'Gestión de Usuarios', 
     to: APP_ROUTES.superadminUsers 
