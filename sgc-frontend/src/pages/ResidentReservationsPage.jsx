@@ -23,7 +23,7 @@ const ResidentReservationsPage = () => {
   const [reservations, setReservations] = useState(mockMyReservations)
   
   // 💡 TRUCO: Cambia esto a "true" para ver cómo el sistema bloquea al moroso
-  const [hasDebt, setHasDebt] = useState(false) 
+  const [hasDebt] = useState(false) 
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
