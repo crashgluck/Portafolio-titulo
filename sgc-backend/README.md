@@ -130,3 +130,36 @@ DB_PORT=
 
 - Documento completo: docs/MER.md
 - Incluye MER actual (implementado) y MER futuro (proyectado).
+
+## Nuevo modulo: Billing alineado al MER
+
+Se actualizo el app `billing` para reflejar la estructura del MER del proyecto.
+
+Modelos implementados:
+- `Condominium`
+- `Unit`
+- `ResidentAssignment`
+- `BillingPeriod`
+- `CommonExpense`
+- `Payment`
+- `PaymentReceipt`
+- `CommonSpace`
+- `Reservation`
+
+Endpoints base (`/api/v1/billing/`):
+- `condominiums/`
+- `units/`
+- `resident-assignments/`
+- `billing-periods/`
+- `common-expenses/`
+- `payments/`
+- `payment-receipts/`
+- `common-spaces/`
+- `reservations/`
+
+Notas de acceso:
+- `admin`/`superadmin`: gestion completa de entidades.
+- `residente`: acceso acotado a su informacion (gastos comunes por sus unidades, pagos, comprobantes y reservas propias).
+
+Estado de pruebas:
+- Suite backend OK: `8 passed`.
