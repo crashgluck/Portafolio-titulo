@@ -3,7 +3,6 @@ import DashboardLayout from '@shared/ui/DashboardLayout'
 import { quickActionRoutes } from '@features/resident-dashboard/components/quickActionRoutes'
 import {
   ContactFormSection,
-  PaymentFormSection,
   PaymentHistorySection,
   QuickActionsSection,
   ResidentOverviewSection,
@@ -64,7 +63,21 @@ const ResidentDashboardPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-5 flex flex-col gap-8">
-            <PaymentFormSection />
+            <section className="bg-white/95 p-6 md:p-8 rounded-2xl border border-stone-200 shadow-sm">
+              <h2 className="text-xl font-bold text-stone-900 uppercase tracking-wide mb-2 border-b border-stone-200 pb-4">
+                Informar pago
+              </h2>
+              <p className="text-sm text-stone-600 mt-4">
+                Para registrar pagos y comprobantes, usa el modulo de pagos conectado al backend.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate(quickActionRoutes.payments)}
+                className="mt-4 rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-stone-50 hover:bg-stone-800"
+              >
+                Ir a Pagos
+              </button>
+            </section>
             <ContactFormSection />
           </div>
 

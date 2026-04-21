@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { APP_ROUTES } from '@app/routes'
 import useAuth from '@features/auth/hooks/useAuth'
-// IMPORTAMOS LOS COMPONENTES COMPARTIDOS
-import { ProfileCard, ActionCard } from '@shared/ui'
+import { ActionCard, ProfileCard } from '@shared/ui'
 
 const AdminProfile = () => {
   const { user } = useAuth()
@@ -19,39 +18,43 @@ const AdminProfile = () => {
   const quickActions = [
     {
       title: 'Resumen Financiero',
-      desc: 'Revisa las métricas globales y la morosidad.',
+      desc: 'Revisa metricas globales y morosidad.',
       path: APP_ROUTES.adminResumen,
-      icon: <span className="text-xl">📊</span>,
-      isPrimary: true // Destacamos esta acción
+      icon: <span className="text-xl">RF</span>,
+      isPrimary: true,
     },
     {
       title: 'Validar Pagos',
       desc: 'Aprueba o rechaza transferencias pendientes.',
       path: APP_ROUTES.adminPayments,
-      icon: <span className="text-xl">✅</span>
+      icon: <span className="text-xl">VP</span>,
     },
     {
       title: 'Estado de Cuenta',
-      desc: 'Busca el historial detallado por departamento.',
+      desc: 'Consulta el historial por departamento.',
       path: APP_ROUTES.adminStatement,
-      icon: <span className="text-xl">🔍</span>
+      icon: <span className="text-xl">EC</span>,
     },
     {
       title: 'Cierre de Mes',
-      desc: 'Ejecuta la facturación y emisión de boletas.',
+      desc: 'Ejecuta la facturacion mensual.',
       path: APP_ROUTES.adminMonthClose,
-      icon: <span className="text-xl">⚠️</span>
-    }
+      icon: <span className="text-xl">CM</span>,
+    },
+    {
+      title: 'Condominios',
+      desc: 'Gestiona unidades, residentes y espacios.',
+      path: APP_ROUTES.adminCondominiums,
+      icon: <span className="text-xl">CO</span>,
+    },
   ]
 
-  // Formateamos el nombre
-  const displayName = user?.nombre ? `${user.nombre} ${user.apellido || ''}` : user?.email || 'Administrador'
-  
+  const displayName =
+    `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.email || 'Administrador'
+
   return (
     <div className="space-y-8">
-      {/* USAMOS EL COMPONENTE COMPARTIDO PROFILECARD */}
-      {/* Como el Admin no debe saldo, le pasamos 'Activo' y vacío en balance, o adaptamos los props si el componente lo permite */}
-      <ProfileCard 
+      <ProfileCard
         name={displayName}
         role="Contabilidad y Finanzas"
         extraInfo={user?.email}
@@ -62,10 +65,9 @@ const AdminProfile = () => {
       <div>
         <h3 className="text-lg font-bold text-stone-800 mb-4">Accesos Directos</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* USAMOS EL COMPONENTE COMPARTIDO ACTIONCARD */}
-          {quickActions.map((action, index) => (
+          {quickActions.map((action) => (
             <ActionCard
-              key={index}
+              key={action.title}
               title={action.title}
               description={action.desc}
               icon={action.icon}

@@ -30,6 +30,8 @@ import AdminPagosPage from '@pages/AdminPagosPage'
 import AdminEstadoCuentaPage from '@pages/AdminEstadoCuentaPage'
 import AdminCierreMesPage from '@pages/AdminCierreMesPage'
 import SuperAdminReservationsPage from '@pages/SuperAdminReservationsPage'
+import AdminCondominiumsPage from '@pages/AdminCondominiumsPage'
+import SuperAdminCondominiumsPage from '@pages/SuperAdminCondominiumsPage'
 import { APP_ROUTES } from './routes'
 
 const AppRouter = () => {
@@ -55,6 +57,7 @@ const AppRouter = () => {
         <Route path={APP_ROUTES.adminPayments} element={<AdminPagosPage />} />
         <Route path={APP_ROUTES.adminStatement} element={<AdminEstadoCuentaPage />} />
         <Route path={APP_ROUTES.adminMonthClose} element={<AdminCierreMesPage />} />
+        <Route path={APP_ROUTES.adminCondominiums} element={<AdminCondominiumsPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.conserje]} />}>
@@ -67,6 +70,7 @@ const AppRouter = () => {
         <Route path={APP_ROUTES.superadminDashboard} element={<SuperAdminDashboardPage />} />
         <Route path={APP_ROUTES.superadminReservations} element={<SuperAdminReservationsPage />} />
         <Route path={APP_ROUTES.superadminUsers} element={<SuperAdminUsersPage />} />
+        <Route path={APP_ROUTES.superadminCondominiums} element={<SuperAdminCondominiumsPage />} />
       </Route>
 
 

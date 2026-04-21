@@ -42,16 +42,17 @@ const parseApiError = async (response) => {
 const request = async (path, options = {}) => {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeoutMs)
+  const isFormDataBody = options.body instanceof FormData
 
   try {
     const response = await fetch(createUrl(path), {
       method: options.method ?? 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        ...(isFormDataBody ? {} : { 'Content-Type': 'application/json' }),
         ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {}),
         ...(options.headers || {}),
       },
-      body: options.body ? JSON.stringify(options.body) : undefined,
+      body: options.body ? (isFormDataBody ? options.body : JSON.stringify(options.body)) : undefined,
       signal: controller.signal,
     })
 
@@ -75,7 +76,8 @@ const request = async (path, options = {}) => {
 
 const apiGet = async (path, options = {}) => request(path, { ...options, method: 'GET' })
 const apiPost = async (path, body, options = {}) => request(path, { ...options, method: 'POST', body })
+const apiPostForm = async (path, body, options = {}) => request(path, { ...options, method: 'POST', body })
 const apiPatch = async (path, body, options = {}) => request(path, { ...options, method: 'PATCH', body })
 const apiDelete = async (path, options = {}) => request(path, { ...options, method: 'DELETE' })
 
-export { apiDelete, apiGet, apiPatch, apiPost }
+export { apiDelete, apiGet, apiPatch, apiPost, apiPostForm }

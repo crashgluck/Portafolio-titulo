@@ -85,6 +85,10 @@ export const adminNavItems = [
   { 
     label: 'Cierre de Mes', 
     to: APP_ROUTES.adminMonthClose 
+  },
+  {
+    label: 'Condominios',
+    to: APP_ROUTES.adminCondominiums,
   }
 ]
 

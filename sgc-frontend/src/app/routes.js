@@ -15,6 +15,7 @@ export const APP_ROUTES = {
   adminPayments: '/admin/pagos',
   adminStatement: '/admin/estado-cuenta',
   adminMonthClose: '/admin/cierre-mes',
+  adminCondominiums: '/admin/condominios',
   
   conserjeDashboard: '/conserje/dashboard',
   conserjeMedidores: '/conserje/medidores',
@@ -22,7 +23,7 @@ export const APP_ROUTES = {
 
   superadminDashboard: '/superadmin/dashboard',
   superadminReservations: '/superadmin/reservas',
-
   superadminUsers: '/superadmin/usuarios',
+  superadminCondominiums: '/superadmin/condominios',
   
 }

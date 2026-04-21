@@ -14,6 +14,10 @@ const superAdminNavItems = [
     label: 'Gestión de Usuarios',
     to: APP_ROUTES.superadminUsers,
   },
+  {
+    label: 'Condominios',
+    to: APP_ROUTES.superadminCondominiums,
+  },
 ]
 
 const roleOptions = [

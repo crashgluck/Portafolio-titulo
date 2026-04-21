@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { APP_ROUTES } from '@app/routes'
 import useAuth from '@features/auth/hooks/useAuth'
-import { ProfileCard, ActionCard } from '@shared/ui'
+import { ActionCard, ProfileCard } from '@shared/ui'
 
 const SuperAdminProfile = () => {
   const { user } = useAuth()
@@ -20,25 +20,29 @@ const SuperAdminProfile = () => {
   const quickActions = [
     {
       title: 'Directorio de Usuarios',
-      desc: 'Administra cuentas, roles y accesos de la plataforma.',
+      desc: 'Administra cuentas, roles y accesos.',
       path: APP_ROUTES.superadminUsers,
-      icon: <span className="text-xl">👥</span>,
-      isPrimary: true
+      icon: <span className="text-xl">US</span>,
+      isPrimary: true,
     },
-    // --- ESTE ES EL BOTÓN NUEVO ---
     {
-      title: 'Crear Nuevo Usuario',
-      desc: 'Añade rápidamente un residente, conserje o administrador.',
-      path: APP_ROUTES.superadminUsers, // Navega a la misma página
-      icon: <span className="text-xl">➕</span>,
-      isPrimary: false,
-      state: { openCreateModal: true } // <-- AQUÍ VA EL MENSAJE SECRETO
-    }
+      title: 'Crear Usuario',
+      desc: 'Crea usuarios residentes y backoffice.',
+      path: APP_ROUTES.superadminUsers,
+      icon: <span className="text-xl">NU</span>,
+      state: { openCreateModal: true },
+    },
+    {
+      title: 'Condominios',
+      desc: 'Administra condominios y su estructura.',
+      path: APP_ROUTES.superadminCondominiums,
+      icon: <span className="text-xl">CO</span>,
+    },
   ]
 
   return (
     <div className="space-y-8">
-      <ProfileCard 
+      <ProfileCard
         name={realName}
         role="Super Administrador"
         extraInfo={user?.email}
@@ -49,17 +53,14 @@ const SuperAdminProfile = () => {
       <div>
         <h3 className="text-lg font-bold text-stone-800 mb-4">Herramientas del Sistema</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickActions.map((action, index) => (
+          {quickActions.map((action) => (
             <ActionCard
-              key={index}
+              key={action.title}
               title={action.title}
               description={action.desc}
               icon={action.icon}
               isPrimary={action.isPrimary}
-              onClick={() => {
-                // --- ACTUALIZAMOS EL ONCLICK PARA ENVIAR EL STATE ---
-                navigate(action.path, { state: action.state })
-              }}
+              onClick={() => navigate(action.path, { state: action.state })}
             />
           ))}
         </div>

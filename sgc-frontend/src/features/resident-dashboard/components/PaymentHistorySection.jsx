@@ -1,6 +1,13 @@
 import DataTable from '@shared/ui/DataTable'
 
-const PaymentHistorySection = ({ columns, data, sectionId = 'seccion-historial' }) => {
+const PaymentHistorySection = ({
+  columns,
+  data,
+  sectionId = 'seccion-historial',
+  isLoading = false,
+  onRefresh,
+  emptyMessage = 'Aun no tienes pagos registrados en este periodo.',
+}) => {
   return (
     <section id={sectionId} className="lg:col-span-7">
       <div className="flex justify-between items-end mb-5">
@@ -8,14 +15,20 @@ const PaymentHistorySection = ({ columns, data, sectionId = 'seccion-historial' 
           <span className="w-2 h-6 bg-stone-900 rounded-sm" />
           Historial de pagos
         </h2>
-        <button className="text-sm font-semibold text-amber-700 hover:text-stone-700 transition-colors">Ver todos</button>
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="text-sm font-semibold text-amber-700 hover:text-stone-700 transition-colors"
+        >
+          Actualizar
+        </button>
       </div>
 
       <DataTable
         columns={columns}
         data={data}
-        isLoading={false}
-        emptyMessage="Aun no tienes pagos registrados en este periodo."
+        isLoading={isLoading}
+        emptyMessage={emptyMessage}
       />
     </section>
   )

@@ -1,6 +1,6 @@
 import DashboardLayout from '@shared/ui/DashboardLayout'
 import useAuth from '@features/auth/hooks/useAuth'
-import SuperAdminProfile from '@features/superadmin-dashboard/components/SuperAdminProfile'
+import SuperAdminProfile from '@features/superadmin-dashboard/components/SuperadminProfile'
 import { superAdminNavItems } from '@features/superadmin-dashboard/data/superAdminDashboardData'
 
 const SuperAdminDashboardPage = () => {
