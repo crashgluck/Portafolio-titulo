@@ -167,7 +167,7 @@ class Reservation(models.Model):
         CANCELLED = 'cancelled', 'Cancelada'
 
     common_space = models.ForeignKey(CommonSpace, on_delete=models.CASCADE, related_name='reservations')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reservations')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='billing_reservations')
     reservation_date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
