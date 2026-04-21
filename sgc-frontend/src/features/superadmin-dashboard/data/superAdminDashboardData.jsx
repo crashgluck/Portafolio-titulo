@@ -1,20 +1,19 @@
-import { APP_ROUTES } from '@app/routes'
+﻿import { APP_ROUTES } from '@app/routes'
 import { USER_ROLES } from '@features/auth/model/auth.constants'
 
 const superAdminNavItems = [
-  { 
-    label: 'Mi Perfil', 
-    to: APP_ROUTES.superadminDashboard 
+  {
+    label: 'Mi Perfil',
+    to: APP_ROUTES.superadminDashboard,
   },
   {
     label: 'Gestión de reservas',
     to: APP_ROUTES.superadminReservations,
-
-    },
-  { 
-    label: 'Gestión de Usuarios', 
-    to: APP_ROUTES.superadminUsers 
-  }
+  },
+  {
+    label: 'Gestión de Usuarios',
+    to: APP_ROUTES.superadminUsers,
+  },
 ]
 
 const roleOptions = [

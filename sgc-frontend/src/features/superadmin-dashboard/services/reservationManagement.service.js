@@ -1,72 +1,28 @@
 import {
-  RESERVATION_STORAGE_KEY,
-  reservationMockList,
-} from '@entities/reservation/model/reservation.model'
+  createReservationRequest,
+  deleteReservationRequest,
+  listReservationsRequest,
+  updateReservationRequest,
+} from '@entities/reservation/api/reservation.api'
 import { mapReservationToRow } from '@entities/reservation/model/reservation.mapper'
 
-const loadReservationStore = () => {
-  if (typeof window === 'undefined') {
-    return reservationMockList
-  }
-
-  const storedValue = window.localStorage.getItem(RESERVATION_STORAGE_KEY)
-
-  if (!storedValue) {
-    window.localStorage.setItem(RESERVATION_STORAGE_KEY, JSON.stringify(reservationMockList))
-    return reservationMockList
-  }
-
-  try {
-    const parsedValue = JSON.parse(storedValue)
-    return Array.isArray(parsedValue) ? parsedValue : reservationMockList
-  } catch {
-    return reservationMockList
-  }
-}
-
-const saveReservationStore = (reservations) => {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  window.localStorage.setItem(RESERVATION_STORAGE_KEY, JSON.stringify(reservations))
-}
-
-const listReservations = async () => {
-  const rows = loadReservationStore()
+const listReservations = async (accessToken) => {
+  const rows = await listReservationsRequest(accessToken)
   return rows.map(mapReservationToRow)
 }
 
-const createReservation = async (payload) => {
-  const currentReservations = loadReservationStore()
-  const nextReservation = {
-    ...payload,
-    id: currentReservations.reduce((maxId, reservation) => Math.max(maxId, reservation.id), 0) + 1,
-  }
-
-  const nextReservations = [nextReservation, ...currentReservations]
-  saveReservationStore(nextReservations)
-
-  return mapReservationToRow(nextReservation)
+const createReservation = async (payload, accessToken) => {
+  const row = await createReservationRequest(payload, accessToken)
+  return mapReservationToRow(row)
 }
 
-const updateReservation = async (reservationId, payload) => {
-  const currentReservations = loadReservationStore()
-
-  const nextReservations = currentReservations.map((reservation) =>
-    reservation.id === reservationId ? { ...reservation, ...payload, id: reservationId } : reservation,
-  )
-
-  const updatedReservation = nextReservations.find((reservation) => reservation.id === reservationId)
-
-  saveReservationStore(nextReservations)
-  return mapReservationToRow(updatedReservation)
+const updateReservation = async (reservationId, payload, accessToken) => {
+  const row = await updateReservationRequest(reservationId, payload, accessToken)
+  return mapReservationToRow(row)
 }
 
-const deleteReservation = async (reservationId) => {
-  const currentReservations = loadReservationStore()
-  const nextReservations = currentReservations.filter((reservation) => reservation.id !== reservationId)
-  saveReservationStore(nextReservations)
+const deleteReservation = async (reservationId, accessToken) => {
+  await deleteReservationRequest(reservationId, accessToken)
 }
 
 export { createReservation, deleteReservation, listReservations, updateReservation }

@@ -1,5 +1,3 @@
-const RESERVATION_STORAGE_KEY = 'sgc.reservations'
-
 const reservationStatus = {
   pending: 'pending',
   approved: 'approved',
@@ -116,63 +114,12 @@ const emptyReservationForm = {
   ...createDynamicFields(),
 }
 
-const reservationMockList = [
-  {
-    id: 1,
-    common_space: commonSpaceType.pool,
-    requester_name: 'Daniela Soto',
-    requester_role: 'residente',
-    reservation_date: '2026-04-02',
-    start_time: '15:00',
-    end_time: '18:00',
-    status: reservationStatus.pending,
-    notes: 'Reserva familiar para fin de semana.',
-    extra_data: {
-      guestCount: 5,
-      poolSlot: 'afternoon',
-    },
-  },
-  {
-    id: 2,
-    common_space: commonSpaceType.multiUseRoom,
-    requester_name: 'Comite Torre A',
-    requester_role: 'admin',
-    reservation_date: '2026-04-05',
-    start_time: '19:00',
-    end_time: '22:00',
-    status: reservationStatus.approved,
-    notes: 'Asamblea mensual del condominio.',
-    extra_data: {
-      attendeeCount: 30,
-      eventPurpose: 'Asamblea',
-      supportNotes: 'Proyector y 30 sillas.',
-    },
-  },
-  {
-    id: 3,
-    common_space: commonSpaceType.gym,
-    requester_name: 'Paula Mena',
-    requester_role: 'residente',
-    reservation_date: '2026-04-08',
-    start_time: '08:00',
-    end_time: '09:30',
-    status: reservationStatus.rejected,
-    notes: 'Bloque solicitado ya ocupado.',
-    extra_data: {
-      trainingType: 'functional',
-      participantCount: 3,
-    },
-  },
-]
-
 export {
-  RESERVATION_STORAGE_KEY,
   commonSpaceFieldConfig,
   commonSpaceOptions,
   commonSpaceType,
   emptyReservationForm,
   reservationFieldType,
-  reservationMockList,
   reservationStatus,
   reservationStatusOptions,
 }
