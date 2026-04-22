@@ -1,6 +1,7 @@
 import DashboardLayout from '@shared/ui/DashboardLayout'
 import useAuth from '@features/auth/hooks/useAuth'
 import CondominiumManagementSection from '@features/condominium-management/components/CondominiumManagementSection'
+import { CondominiumProvider } from '@features/condominium-management/context/CondominiumProvider'
 import { superAdminNavItems } from '@features/superadmin-dashboard/data/superAdminDashboardData'
 
 const SuperAdminCondominiumsPage = () => {
@@ -19,7 +20,9 @@ const SuperAdminCondominiumsPage = () => {
           <h2 className="text-2xl font-bold text-stone-900">Gestion Multi-Condominio</h2>
           <p className="mt-1 text-stone-500">Administra condominios, unidades, asignaciones de residentes y espacios comunes.</p>
         </div>
-        <CondominiumManagementSection />
+        <CondominiumProvider>
+          <CondominiumManagementSection />
+        </CondominiumProvider>
       </div>
     </DashboardLayout>
   )
