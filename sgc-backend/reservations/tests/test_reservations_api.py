@@ -12,7 +12,11 @@ def api_client():
 
 @pytest.fixture
 def common_space_pool(db):
-    return CommonSpace.objects.create(code=CommonSpace.Code.POOL, name='Piscina', capacity=6)
+    common_space, _ = CommonSpace.objects.get_or_create(
+        code=CommonSpace.Code.POOL,
+        defaults={'name': 'Piscina', 'capacity': 6},
+    )
+    return common_space
 
 
 @pytest.fixture
