@@ -25,5 +25,6 @@ export const APP_ROUTES = {
   superadminReservations: '/superadmin/reservas',
   superadminUsers: '/superadmin/usuarios',
   superadminCondominiums: '/superadmin/condominios',
+  superadminPayments: '/superadmin/pagos',
   
 }

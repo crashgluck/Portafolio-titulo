@@ -32,6 +32,7 @@ import AdminCierreMesPage from '@pages/AdminCierreMesPage'
 import SuperAdminReservationsPage from '@pages/SuperAdminReservationsPage'
 import AdminCondominiumsPage from '@pages/AdminCondominiumsPage'
 import SuperAdminCondominiumsPage from '@pages/SuperAdminCondominiumsPage'
+import SuperAdminPaymentsPage from '@pages/SuperAdminPaymentsPage'
 import { APP_ROUTES } from './routes'
 
 const AppRouter = () => {
@@ -71,6 +72,7 @@ const AppRouter = () => {
         <Route path={APP_ROUTES.superadminReservations} element={<SuperAdminReservationsPage />} />
         <Route path={APP_ROUTES.superadminUsers} element={<SuperAdminUsersPage />} />
         <Route path={APP_ROUTES.superadminCondominiums} element={<SuperAdminCondominiumsPage />} />
+        <Route path={APP_ROUTES.superadminPayments} element={<SuperAdminPaymentsPage />} />
       </Route>
 
 

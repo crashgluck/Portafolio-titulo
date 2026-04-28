@@ -18,6 +18,10 @@ const superAdminNavItems = [
     label: 'Condominios',
     to: APP_ROUTES.superadminCondominiums,
   },
+  {
+    label: 'Gestión de pagos',
+    to: APP_ROUTES.superadminPayments,
+  },
 ]
 
 const roleOptions = [
