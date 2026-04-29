@@ -4,7 +4,7 @@ const ResidentOverviewSection = ({ profiles }) => {
   return (
     <section className="mb-10 space-y-4">
       <header>
-        <h1 className="text-3xl md:text-4xl font-extrabold text-stone-900 tracking-tight">Mi panel</h1>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-stone-900 tracking-tight">Mi Perfil</h1>
         <p className="text-stone-600 mt-2 text-base">Resumen de cuenta y acciones rapidas de tu departamento.</p>
       </header>
 

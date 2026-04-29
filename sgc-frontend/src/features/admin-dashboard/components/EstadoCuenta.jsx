@@ -1,127 +1,250 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import useAuth from '@features/auth/hooks/useAuth'
+import useCondominium from '@features/condominium-management/hooks/useCondominium'
+import { listUnitsRequest } from '@features/condominium-management/api/billing.api'
 import { commonExpensesMock } from '../data/adminDashboardData'
+import { formatCurrencyCLP } from '@shared/lib/format'
+
+// Importamos las librerías para el PDF
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
 
 const EstadoCuenta = () => {
-  const [searchUnit, setSearchUnit] = useState('')
-  const [selectedUnit, setSelectedUnit] = useState(null)
+  const { accessToken } = useAuth()
+  const {
+    condominiums,
+    activeCondominiumId,
+    activeCondominium,
+    isLoading: isLoadingCondos
+  } = useCondominium()
+
+  const [units, setUnits] = useState([])
+  const [selectedUnitId, setSelectedUnitId] = useState('')
+  const [selectedUnitData, setSelectedUnitData] = useState(null)
+  const [loadingUnits, setLoadingUnits] = useState(false)
   const [error, setError] = useState('')
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP',
-      maximumFractionDigits: 0
-    }).format(amount)
-  }
+  const loadUnits = useCallback(async () => {
+    if (!accessToken) return
+    setLoadingUnits(true)
+    try {
+      const data = await listUnitsRequest(accessToken)
+      setUnits(Array.isArray(data) ? data : [])
+    } catch (err) {
+      setUnits([])
+    } finally {
+      setLoadingUnits(false)
+    }
+  }, [accessToken])
 
-  // Simulamos la búsqueda en la base de datos
+  useEffect(() => {
+    loadUnits()
+  }, [loadUnits])
+
+  const availableUnits = useMemo(() => {
+    if (!activeCondominiumId) return []
+    return units.filter(u => String(u.condominium) === String(activeCondominiumId))
+  }, [units, activeCondominiumId])
+
+  useEffect(() => {
+    setSelectedUnitId('')
+    setSelectedUnitData(null)
+  }, [activeCondominiumId])
+
   const handleSearch = (e) => {
     e.preventDefault()
+    if (!selectedUnitId) return
     setError('')
-    
-    if (!searchUnit.trim()) return
-
-    const found = commonExpensesMock.find(exp => exp.unit === searchUnit)
+    const found = commonExpensesMock.find(exp => String(exp.unit) === String(selectedUnitId))
     if (found) {
-      setSelectedUnit(found)
+      setSelectedUnitData(found)
     } else {
-      setSelectedUnit(null)
-      setError('No se encontró el departamento. Intente con "101", "201", etc.')
+      setSelectedUnitData(null)
+      setError('No se encontraron registros financieros para esta unidad.')
     }
+  }
+
+  // --- FUNCIÓN PARA GENERAR EL PDF ---
+  const downloadPDF = () => {
+    if (!selectedUnitData) return
+
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const condoName = activeCondominium?.name || 'Condominio'
+    
+    // 1. Encabezado y Título
+    doc.setFontSize(20)
+    doc.setTextColor(40, 40, 40)
+    doc.text('ESTADO DE CUENTA', 15, 20)
+    
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 15, 26)
+
+    // 2. Información del Condominio y Unidad
+    doc.setDrawColor(200, 200, 200)
+    doc.line(15, 32, pageWidth - 15, 32)
+    
+    doc.setFontSize(12)
+    doc.setTextColor(0, 0, 0)
+    doc.setFont('helvetica', 'bold')
+    doc.text('INFORMACIÓN GENERAL', 15, 42)
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.text(`Condominio: ${condoName}`, 15, 50)
+    doc.text(`Unidad: Depto ${selectedUnitData.unit}`, 15, 56)
+    doc.text(`Copropietario: ${selectedUnitData.owner}`, 15, 62)
+
+    // 3. Cuadro de Resumen Financiero
+    doc.setFillColor(245, 245, 245)
+    doc.rect(130, 42, 65, 20, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.text('SALDO PENDIENTE', 135, 48)
+    doc.setFontSize(14)
+    doc.setTextColor(180, 0, 0) // Rojo para la deuda
+    doc.text(formatCurrencyCLP(selectedUnitData.amount), 135, 57)
+
+    // 4. Tabla de Movimientos (Usando Autotable)
+    const tableData = [
+      ['Marzo 2026', 'Gasto Común - Periodo Actual', formatCurrencyCLP(selectedUnitData.amount), 'Pendiente'],
+      ['Febrero 2026', 'Pago Recibido - Transferencia', `+${formatCurrencyCLP(selectedUnitData.amount)}`, 'Aprobado'],
+      ['Enero 2026', 'Pago Recibido - Transferencia', `+${formatCurrencyCLP(selectedUnitData.amount)}`, 'Aprobado']
+    ]
+
+    doc.autoTable({
+      startY: 75,
+      head: [['Fecha', 'Descripción', 'Monto', 'Estado']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [40, 40, 40], fontSize: 10 },
+      styles: { fontSize: 9, cellPadding: 4 }
+    })
+
+    // 5. Pie de página
+    const finalY = doc.lastAutoTable.finalY || 150
+    doc.setFontSize(8)
+    doc.setTextColor(150, 150, 150)
+    doc.text('Este documento es un comprobante informativo generado por el Sistema de Gestión de Condominios (SGC).', pageWidth / 2, finalY + 20, { align: 'center' })
+
+    // Guardar el PDF
+    doc.save(`Estado_Cuenta_Depto_${selectedUnitData.unit}.pdf`)
   }
 
   return (
     <div className="space-y-6">
-      {/* Buscador de Departamento */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 items-end">
-          <div className="flex-1 w-full">
-            <label className="block text-sm font-semibold text-stone-700 mb-1">
-              Buscar por Número de Departamento
-            </label>
-            <input
-              type="text"
-              placeholder="Ej: 201"
-              value={searchUnit}
-              onChange={(e) => setSearchUnit(e.target.value)}
-              className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all"
-            />
+      {/* Sección de Filtros */}
+      <section className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+        <div className="mb-6">
+          <h3 className="text-lg font-bold text-stone-900">Consulta de Estado Histórico</h3>
+          <p className="text-sm text-stone-500">Seleccione la ubicación para generar el informe.</p>
+        </div>
+
+        <form onSubmit={handleSearch} className="grid gap-4 md:grid-cols-3 items-end">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Condominio</label>
+            <select
+              value={activeCondominiumId || ''}
+              onChange={(e) => setActiveCondominium(e.target.value)}
+              className="w-full p-2.5 border border-stone-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-amber-500/30"
+            >
+              {!condominiums.length ? (
+                <option value="">Sin condominios disponibles</option>
+              ) : (
+                <>
+                  <option value="">Seleccione condominio...</option>
+                  {condominiums.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </>
+              )}
+            </select>
           </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Unidad</label>
+            <select
+              value={selectedUnitId}
+              onChange={(e) => setSelectedUnitId(e.target.value)}
+              disabled={!activeCondominiumId || loadingUnits}
+              className="w-full p-2.5 border border-stone-300 rounded-lg text-sm bg-white disabled:bg-stone-50"
+            >
+              <option value="">{!activeCondominiumId ? 'Elija condominio' : 'Seleccione unidad...'}</option>
+              {availableUnits.map(u => (
+                <option key={u.id} value={u.id}>{u.number ? `Depto ${u.number}` : `Unidad #${u.id}`}</option>
+              ))}
+            </select>
+          </div>
+
           <button 
             type="submit"
-            className="w-full sm:w-auto px-6 py-2 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-lg transition-colors"
+            disabled={!selectedUnitId || isLoadingCondos}
+            className="bg-stone-900 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-stone-800 disabled:bg-stone-300 transition-all shadow-sm"
           >
-            Buscar Historial
+            Ver Historial
           </button>
         </form>
-        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-      </div>
+        {error && <p className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
+      </section>
 
-      {/* Pantalla vacía (antes de buscar) */}
-      {!selectedUnit && !error && (
-        <div className="bg-stone-50 border border-stone-200 border-dashed rounded-xl p-12 text-center">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 mx-auto text-stone-400 mb-3">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-          </svg>
-          <h3 className="text-lg font-bold text-stone-600">Busque un departamento</h3>
-          <p className="text-stone-500 text-sm">Ingrese el número de la unidad arriba para ver su historial completo.</p>
-        </div>
-      )}
-
-      {/* Resultados del Historial (Lo que antes era el Modal) */}
-      {selectedUnit && (
-        <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-          <div className="px-6 py-5 border-b border-stone-200 bg-stone-900 text-white flex justify-between items-center">
+      {/* Tarjeta de Resultados */}
+      {selectedUnitData && (
+        <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden animate-in fade-in">
+          <div className="bg-stone-900 p-6 text-white flex justify-between items-center">
             <div>
-              <h3 className="text-xl font-bold">Estado de Cuenta Histórico</h3>
-              <p className="text-sm text-stone-300 mt-1">Depto {selectedUnit.unit} - {selectedUnit.owner}</p>
+              <h4 className="text-xl font-bold">Resumen de Movimientos</h4>
+              <p className="text-stone-400 text-sm">Depto {selectedUnitData.unit} • {selectedUnitData.owner}</p>
             </div>
-            <button className="px-4 py-2 bg-stone-700 hover:bg-stone-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm">
+            {/* BOTÓN CONECTADO A LA FUNCIÓN PDF */}
+            <button 
+              onClick={downloadPDF}
+              className="bg-amber-500 hover:bg-amber-600 text-stone-900 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg"
+            >
               Descargar PDF
             </button>
           </div>
-
+          
           <div className="p-6">
-            <div className="bg-stone-50 rounded-lg p-5 mb-8 flex justify-between items-center border border-stone-200">
-              <div>
-                <span className="block text-sm font-bold text-stone-500 uppercase tracking-wider mb-1">Deuda Acumulada Actual</span>
-                {selectedUnit.status === 'moroso' ? (
-                  <span className="text-3xl font-bold text-red-600">{formatCurrency(selectedUnit.amount * 2)}</span>
-                ) : (
-                  <span className="text-3xl font-bold text-emerald-600">$0</span>
-                )}
-              </div>
-            </div>
-
-            <h4 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-4 border-b border-stone-100 pb-2">Movimientos del Año</h4>
-            
-            <div className="space-y-3">
-              {/* Mes Actual */}
-              <div className="flex justify-between items-center p-4 border-l-4 border-amber-500 bg-white shadow-sm border-y border-r border-stone-100 rounded-r-lg hover:bg-stone-50 transition-colors">
-                <div>
-                  <span className="font-bold text-stone-800 text-lg block">Marzo 2026</span>
-                  <span className="text-sm font-medium text-amber-600">Cobro Emitido (Vence: {selectedUnit.dueDate})</span>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="p-5 bg-stone-50 rounded-xl border border-stone-100">
+                   <span className="block text-xs font-bold text-stone-500 uppercase mb-1">Deuda Pendiente</span>
+                   <span className="text-3xl font-black text-red-600">
+                      {formatCurrencyCLP(selectedUnitData.amount)}
+                   </span>
                 </div>
-                <span className="font-bold text-stone-800 text-lg">-{formatCurrency(selectedUnit.amount)}</span>
-              </div>
-
-              {/* Meses Anteriores Simulados */}
-              <div className="flex justify-between items-center p-4 border-l-4 border-emerald-500 bg-white shadow-sm border-y border-r border-stone-100 rounded-r-lg hover:bg-stone-50 transition-colors">
-                <div>
-                  <span className="font-bold text-stone-800 text-lg block">Febrero 2026</span>
-                  <span className="text-sm font-medium text-emerald-600">Pagado con Transferencia</span>
+                <div className="p-5 bg-stone-50 rounded-xl border border-stone-100">
+                   <span className="block text-xs font-bold text-stone-500 uppercase mb-1">Estado de Cuenta</span>
+                   <span className={`inline-block mt-1 text-sm font-bold px-3 py-1 rounded-full ${selectedUnitData.status === 'moroso' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {selectedUnitData.status.toUpperCase()}
+                   </span>
                 </div>
-                <span className="font-bold text-stone-800 text-lg">+{formatCurrency(selectedUnit.amount)}</span>
-              </div>
+             </div>
 
-              <div className="flex justify-between items-center p-4 border-l-4 border-emerald-500 bg-white shadow-sm border-y border-r border-stone-100 rounded-r-lg hover:bg-stone-50 transition-colors">
-                <div>
-                  <span className="font-bold text-stone-800 text-lg block">Enero 2026</span>
-                  <span className="text-sm font-medium text-emerald-600">Pagado con Transferencia</span>
-                </div>
-                <span className="font-bold text-stone-800 text-lg">+{formatCurrency(selectedUnit.amount * 0.95)}</span>
-              </div>
-            </div>
+             {/* Vista previa de la tabla en la web */}
+             <div className="overflow-x-auto">
+               <table className="w-full text-left text-sm">
+                 <thead>
+                   <tr className="border-b border-stone-200 text-stone-400 uppercase text-[10px] font-bold">
+                     <th className="py-3">Periodo</th>
+                     <th className="py-3">Descripción</th>
+                     <th className="py-3">Monto</th>
+                     <th className="py-3 text-right">Estado</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-stone-100">
+                   <tr className="hover:bg-stone-50 transition-colors">
+                     <td className="py-4 font-bold">Marzo 2026</td>
+                     <td className="py-4 text-stone-600">Cobro Gasto Común</td>
+                     <td className="py-4 font-bold text-red-600">-{formatCurrencyCLP(selectedUnitData.amount)}</td>
+                     <td className="py-4 text-right"><span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">Pendiente</span></td>
+                   </tr>
+                   <tr className="hover:bg-stone-50 transition-colors">
+                     <td className="py-4 font-bold">Febrero 2026</td>
+                     <td className="py-4 text-stone-600">Pago Recibido</td>
+                     <td className="py-4 font-bold text-emerald-600">+{formatCurrencyCLP(selectedUnitData.amount)}</td>
+                     <td className="py-4 text-right"><span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">Aprobado</span></td>
+                   </tr>
+                 </tbody>
+               </table>
+             </div>
           </div>
         </div>
       )}

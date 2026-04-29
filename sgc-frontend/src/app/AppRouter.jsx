@@ -1,8 +1,9 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, Outlet } from 'react-router-dom'
 import ProtectedRoute from '@features/auth/guards/ProtectedRoute'
 import PublicOnlyRoute from '@features/auth/guards/PublicOnlyRoute'
 import HomeRedirect from '@features/auth/guards/HomeRedirect'
 import { USER_ROLES } from '@features/auth/model/auth.constants'
+import { CondominiumProvider } from '@features/condominium-management/context/CondominiumProvider'
 
 // Imports de páginas
 import WelcomePage from '@pages/WelcomePage'
@@ -53,18 +54,32 @@ const AppRouter = () => {
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.admin]} />}>
-        <Route path={APP_ROUTES.adminDashboard} element={<AdminDashboardPage />} />
-        <Route path={APP_ROUTES.adminResumen} element={<AdminResumenPage />} />
-        <Route path={APP_ROUTES.adminPayments} element={<AdminPagosPage />} />
-        <Route path={APP_ROUTES.adminStatement} element={<AdminEstadoCuentaPage />} />
-        <Route path={APP_ROUTES.adminMonthClose} element={<AdminCierreMesPage />} />
-        <Route path={APP_ROUTES.adminCondominiums} element={<AdminCondominiumsPage />} />
+
+        <Route element={
+          <CondominiumProvider>
+            <Outlet /> 
+          </CondominiumProvider>
+        }>
+          <Route path={APP_ROUTES.adminDashboard} element={<AdminDashboardPage />} />
+          <Route path={APP_ROUTES.adminResumen} element={<AdminResumenPage />} />
+          <Route path={APP_ROUTES.adminPayments} element={<AdminPagosPage />} />
+          <Route path={APP_ROUTES.adminStatement} element={<AdminEstadoCuentaPage />} />
+          <Route path={APP_ROUTES.adminMonthClose} element={<AdminCierreMesPage />} />
+          <Route path={APP_ROUTES.adminCondominiums} element={<AdminCondominiumsPage />} />
+        </Route>
       </Route>
 
+      {/* RUTAS DEL CONSERJE */}
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.conserje]} />}>
-        <Route path={APP_ROUTES.conserjeDashboard} element={<ConserjeDashboardPage />} />
-        <Route path={APP_ROUTES.conserjeMedidores} element={<ConserjeMedidoresPage />} />
-        <Route path={APP_ROUTES.conserjeReservations} element={<ConserjeReservationsPage />} />
+        <Route element={
+          <CondominiumProvider>
+            <Outlet />
+          </CondominiumProvider>
+        }>
+          <Route path={APP_ROUTES.conserjeDashboard} element={<ConserjeDashboardPage />} />
+          <Route path={APP_ROUTES.conserjeMedidores} element={<ConserjeMedidoresPage />} />
+          <Route path={APP_ROUTES.conserjeReservations} element={<ConserjeReservationsPage />} />
+        </Route>
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.superadmin]} />}>

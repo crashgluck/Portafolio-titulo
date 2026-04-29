@@ -5,7 +5,7 @@ import { paymentHistoryMock, paymentStatus } from '../../payments/model/payment.
 // Items de menu para el rol "Residente".
 export const residentNavItems = [
   {
-    label: 'Panel principal',
+    label: 'Mi Perfil',
     to: APP_ROUTES.residentDashboard,
   },
   {

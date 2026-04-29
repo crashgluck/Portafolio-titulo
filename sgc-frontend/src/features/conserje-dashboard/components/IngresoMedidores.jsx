@@ -1,71 +1,146 @@
-import { useState } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import useAuth from '@features/auth/hooks/useAuth'
+import useCondominium from '@features/condominium-management/hooks/useCondominium'
+import { listUnitsRequest } from '@features/condominium-management/api/billing.api'
 import { meterReadingsMock, readingTypes } from '../data/conserjeDashboardData'
 
 const IngresoMedidores = () => {
-  // Estado para la tabla (cargamos los datos falsos iniciales)
-  const [readings, setReadings] = useState(meterReadingsMock)
+  const { accessToken } = useAuth()
+  
+  // 1. Extraemos el contexto global de condominios
+  const { 
+    condominiums, 
+    activeCondominiumId, 
+    setActiveCondominium 
+  } = useCondominium()
 
-  // Estado para el formulario
-  const [unit, setUnit] = useState('')
+  // Estados de datos
+  const [readings, setReadings] = useState(meterReadingsMock)
+  const [units, setUnits] = useState([])
+  const [loadingUnits, setLoadingUnits] = useState(false)
+
+  // Estados del formulario
+  const [selectedUnitId, setSelectedUnitId] = useState('')
   const [type, setType] = useState(readingTypes[0].value)
   const [currentReading, setCurrentReading] = useState('')
 
-  // Simulación de guardar la lectura
+  // 2. Cargar Unidades desde la API
+  const loadUnits = useCallback(async () => {
+    if (!accessToken) return
+    setLoadingUnits(true)
+    try {
+      const data = await listUnitsRequest(accessToken)
+      setUnits(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.warn("No se pudieron cargar unidades.")
+      setUnits([])
+    } finally {
+      setLoadingUnits(false)
+    }
+  }, [accessToken])
+
+  useEffect(() => {
+    loadUnits()
+  }, [loadUnits])
+
+  // 3. Filtrar unidades según el condominio seleccionado
+  const availableUnits = useMemo(() => {
+    if (!activeCondominiumId) return []
+    return units.filter(u => String(u.condominium) === String(activeCondominiumId))
+  }, [units, activeCondominiumId])
+
+  // Limpiar unidad seleccionada si cambia el condominio
+  useEffect(() => {
+    setSelectedUnitId('')
+  }, [activeCondominiumId])
+
+
+  // 4. Manejo del Formulario
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    if (!unit || !currentReading) {
-      alert('Por favor ingrese el departamento y la lectura.')
+    if (!activeCondominiumId) {
+      alert('Debe seleccionar un condominio primero.')
       return
     }
 
-    // Simulamos que el backend nos devuelve el consumo calculando (Lectura actual - Lectura anterior)
-    // Para el demo, inventamos una lectura anterior un poco menor a la ingresada.
+    if (!selectedUnitId || !currentReading) {
+      alert('Por favor seleccione el departamento e ingrese la lectura.')
+      return
+    }
+
+    // Buscamos el nombre del depto seleccionado para mostrarlo en la tabla
+    const unitObj = units.find(u => String(u.id) === String(selectedUnitId))
+    const unitDisplay = unitObj?.number ? `Depto ${unitObj.number}` : `Unidad #${selectedUnitId}`
+
     const prevMock = Math.max(0, Number(currentReading) - Math.floor(Math.random() * 20 + 1))
     const consumption = Number(currentReading) - prevMock
 
     const newReading = {
       id: `lec-new-${Date.now()}`,
-      unit: unit,
+      unit: unitDisplay, // Guardamos el nombre formateado
       type: type,
       previousReading: prevMock,
       currentReading: Number(currentReading),
       consumption: consumption,
-      // Usamos la fecha de hoy para el registro
       dateRecorded: new Date().toISOString().split('T')[0],
       status: 'registrado'
     }
 
-    // Agregamos a la lista y limpiamos el formulario para el siguiente depto
     setReadings([newReading, ...readings])
-    setUnit('')
+    // Limpiamos solo la lectura y el depto para agilizar el ingreso masivo
+    setSelectedUnitId('')
     setCurrentReading('')
     
-    // Dejamos el foco en el input del departamento para escribir rápido el siguiente
-    document.getElementById('unit-input').focus()
+    document.getElementById('unit-select').focus()
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in">
       
+      {/* --- SELECTOR DE CONTEXTO (NUEVO) --- */}
+      <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-stone-900 text-sm uppercase tracking-wider mb-1">Ubicación de Trabajo</h3>
+          <p className="text-xs text-stone-500">Seleccione el edificio donde está registrando medidores.</p>
+        </div>
+        <select
+          value={activeCondominiumId || ''}
+          onChange={(e) => setActiveCondominium(e.target.value)}
+          className="w-64 p-2.5 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-500/30 bg-stone-50"
+        >
+          <option value="">Seleccione edificio...</option>
+          {condominiums.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      </div>
+
       {/* --- FORMULARIO DE INGRESO RÁPIDO --- */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-        <div className="mb-4">
-          <h3 className="text-lg font-bold text-stone-800">Nueva Lectura</h3>
-          <p className="text-sm text-stone-500">Ingrese los datos del medidor. El sistema calculará el consumo automáticamente.</p>
+      <div className={`bg-white p-6 rounded-xl shadow-sm border border-stone-200 transition-opacity ${!activeCondominiumId ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+        <div className="mb-4 flex justify-between items-end">
+          <div>
+            <h3 className="text-lg font-bold text-stone-800">Nueva Lectura</h3>
+            <p className="text-sm text-stone-500">Ingrese los datos del medidor. El consumo se calcula automáticamente.</p>
+          </div>
+          {!activeCondominiumId && <span className="text-xs font-bold text-red-500">Requiere elegir edificio ↑</span>}
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 items-end">
-          <div className="w-full md:w-32">
+          
+          {/* AHORA ES UN SELECT FILTRADO */}
+          <div className="w-full md:w-40">
             <label className="block text-sm font-semibold text-stone-700 mb-1">Depto</label>
-            <input
-              id="unit-input"
-              type="text"
-              placeholder="Ej: 101"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all"
-            />
+            <select
+              id="unit-select"
+              value={selectedUnitId}
+              onChange={(e) => setSelectedUnitId(e.target.value)}
+              disabled={loadingUnits}
+              className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all bg-white"
+            >
+              <option value="">Seleccionar...</option>
+              {availableUnits.map(u => (
+                <option key={u.id} value={u.id}>{u.number ? `Depto ${u.number}` : `U. #${u.id}`}</option>
+              ))}
+            </select>
           </div>
 
           <div className="w-full md:w-48">
@@ -82,7 +157,7 @@ const IngresoMedidores = () => {
           </div>
 
           <div className="flex-1 w-full">
-            <label className="block text-sm font-semibold text-stone-700 mb-1">Lectura Actual en Medidor</label>
+            <label className="block text-sm font-semibold text-stone-700 mb-1">Lectura Actual</label>
             <input
               type="number"
               placeholder="Ej: 462"
@@ -136,7 +211,7 @@ const IngresoMedidores = () => {
                     <td className="px-6 py-4 text-sm font-mono text-stone-400">{reading.previousReading}</td>
                     <td className="px-6 py-4 text-sm font-mono font-bold text-emerald-600">{reading.currentReading}</td>
                     <td className="px-6 py-4 text-sm font-bold text-amber-600">
-                      {reading.consumption} {reading.type === 'Agua Caliente' ? 'm³' : 'kWh'}
+                      {reading.consumption} {reading.type === 'Agua Caliente' || reading.type === 'agua' ? 'm³' : 'kWh'}
                     </td>
                     <td className="px-6 py-4 text-sm text-stone-500">{reading.dateRecorded}</td>
                     <td className="px-6 py-4 text-sm text-right">
