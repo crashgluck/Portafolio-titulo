@@ -35,12 +35,12 @@ const iconHistory = (
 
 const QuickActionsSection = ({ onDownloadNotice, onGoToPayments, onGoToHistory }) => {
   return (
-    <section className="mb-12">
-      <h2 className="text-lg font-bold text-stone-900 mb-5 uppercase tracking-wide flex items-center gap-2">
+    <section className="mb-12 animate-fade-in-up">
+      <h2 className="mb-5 flex items-center gap-2 text-lg font-bold uppercase tracking-wide text-stone-900">
         <span className="w-2 h-6 bg-amber-600 rounded-sm" />
         Acciones frecuentes
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 md:gap-6">
         <ActionCard
           title="Descargar aviso"
           description="Genera un PDF con el detalle de tus gastos comunes del mes actual."

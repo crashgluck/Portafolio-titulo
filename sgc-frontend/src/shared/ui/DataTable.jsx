@@ -1,16 +1,75 @@
-const DataTable = ({ columns, data, isLoading = false, emptyMessage = 'No hay registros para mostrar.' }) => {
+const fallbackValue = <span className="text-xs italic text-stone-400">N/A</span>
+
+const DataTable = ({
+  columns,
+  data,
+  isLoading = false,
+  emptyMessage = 'No hay registros para mostrar.',
+  rowKey = 'id',
+  title = 'Listado',
+}) => {
   const safeData = Array.isArray(data) ? data : []
   const safeColumns = Array.isArray(columns) ? columns : []
   const colSpan = Math.max(1, safeColumns.length)
 
+  const getCellValue = (row, col) => {
+    if (typeof col.accessor === 'function') {
+      return col.accessor(row)
+    }
+    return row[col.accessor] || fallbackValue
+  }
+
+  const getRowKey = (row, index) => {
+    if (typeof rowKey === 'function') {
+      return rowKey(row, index)
+    }
+    return row[rowKey] ?? `${index}-${row?.periodo || row?.id || 'row'}`
+  }
+
+  const renderLoading = (cellClassName) => (
+    <tr>
+      <td colSpan={colSpan} className={cellClassName}>
+        <div className="flex items-center justify-center gap-2.5 text-sm font-semibold text-stone-600">
+          <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-amber-200 border-t-amber-700" />
+          Cargando datos...
+        </div>
+      </td>
+    </tr>
+  )
+
+  const renderEmpty = (cellClassName) => (
+    <tr>
+      <td colSpan={colSpan} className={cellClassName}>
+        <div className="flex flex-col items-center justify-center text-center">
+          <span className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                d="M9 12h6m-6 4h6m3-7.5L13.5 4H7.5A1.5 1.5 0 006 5.5v13A1.5 1.5 0 007.5 20h9a1.5 1.5 0 001.5-1.5V9.5z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.8}
+              />
+            </svg>
+          </span>
+          <p className="m-0 text-sm font-semibold text-stone-800">{emptyMessage}</p>
+          <p className="m-0 mt-1 text-xs text-stone-500">Cuando existan datos, apareceran en esta seccion.</p>
+        </div>
+      </td>
+    </tr>
+  )
+
   return (
-    <div className="bg-stone-50 rounded-xl border border-stone-200 shadow-sm overflow-hidden flex flex-col">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[600px]">
+    <div className="surface-panel overflow-hidden">
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[680px] border-collapse text-left">
+          <caption className="sr-only">{title}</caption>
           <thead>
-            <tr className="bg-stone-100 border-b border-stone-200">
+            <tr className="border-b border-stone-200 bg-stone-100/80">
               {safeColumns.map((col) => (
-                <th key={col.header} className="py-4 px-6 text-xs sm:text-sm font-bold text-stone-700 uppercase tracking-wider whitespace-nowrap">
+                <th
+                  key={col.header}
+                  className="whitespace-nowrap px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-stone-700"
+                >
                   {col.header}
                 </th>
               ))}
@@ -18,45 +77,50 @@ const DataTable = ({ columns, data, isLoading = false, emptyMessage = 'No hay re
           </thead>
 
           <tbody className="divide-y divide-stone-200">
-            {isLoading ? (
-              <tr>
-                <td colSpan={colSpan} className="py-12 text-center text-stone-600">
-                  <div className="flex justify-center items-center gap-3">
-                    <svg className="animate-spin h-5 w-5 text-amber-700" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    <span className="font-medium">Cargando datos...</span>
-                  </div>
-                </td>
-              </tr>
-            ) : safeData.length === 0 ? (
-              <tr>
-                <td colSpan={colSpan} className="py-16 text-center">
-                  <div className="flex flex-col items-center justify-center text-stone-600">
-                    <svg className="w-12 h-12 mb-3 text-amber-700/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p className="text-base font-medium text-stone-900">{emptyMessage}</p>
-                    <p className="text-sm mt-1">Los nuevos registros apareceran aqui.</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              safeData.map((row, rowIndex) => (
-                <tr key={`${row.periodo}-${rowIndex}`} className="hover:bg-stone-100/70 transition-colors duration-150">
-                  {safeColumns.map((col, colIndex) => (
-                    <td key={`${col.header}-${colIndex}`} className="py-4 px-6 text-sm text-stone-900">
-                      {typeof col.accessor === 'function'
-                        ? col.accessor(row)
-                        : row[col.accessor] || <span className="text-stone-400 italic text-xs">N/A</span>}
-                    </td>
+            {isLoading
+              ? renderLoading('px-6 py-14 text-center')
+              : safeData.length === 0
+                ? renderEmpty('px-6 py-16 text-center')
+                : safeData.map((row, rowIndex) => (
+                    <tr key={getRowKey(row, rowIndex)} className="transition-colors hover:bg-stone-50">
+                      {safeColumns.map((col) => (
+                        <td key={`${col.header}-${rowIndex}`} className="px-5 py-3.5 text-sm text-stone-800">
+                          {getCellValue(row, col)}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))
-            )}
           </tbody>
         </table>
+      </div>
+
+      <div className="space-y-3 p-3 md:hidden">
+        {isLoading ? (
+          <div className="rounded-xl border border-stone-200 bg-white px-4 py-8 text-center">
+            <div className="inline-flex items-center gap-2 text-sm font-semibold text-stone-600">
+              <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-amber-200 border-t-amber-700" />
+              Cargando datos...
+            </div>
+          </div>
+        ) : safeData.length === 0 ? (
+          <div className="rounded-xl border border-stone-200 bg-white px-4 py-8 text-center">
+            <p className="m-0 text-sm font-semibold text-stone-800">{emptyMessage}</p>
+            <p className="m-0 mt-1 text-xs text-stone-500">No hay informacion para este filtro.</p>
+          </div>
+        ) : (
+          safeData.map((row, rowIndex) => (
+            <article key={getRowKey(row, rowIndex)} className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+              <dl className="m-0 space-y-2">
+                {safeColumns.map((col) => (
+                  <div key={`${col.header}-${rowIndex}`} className="flex items-start justify-between gap-3">
+                    <dt className="shrink-0 text-xs font-bold uppercase tracking-wide text-stone-500">{col.header}</dt>
+                    <dd className="m-0 max-w-[60%] text-right text-sm font-medium text-stone-800">{getCellValue(row, col)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          ))
+        )}
       </div>
     </div>
   )

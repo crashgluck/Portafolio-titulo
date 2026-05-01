@@ -47,7 +47,7 @@ const LoginPage = () => {
         </>
       }
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="animate-fade-in">
         <FormInput
           label="Correo electronico"
           type="email"
@@ -65,12 +65,16 @@ const LoginPage = () => {
           required
         />
 
-        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+            {error}
+          </div>
+        )}
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-stone-900 text-stone-50 py-2.5 rounded-lg font-semibold hover:bg-stone-800 transition-colors disabled:opacity-60"
+          className="btn-primary w-full"
         >
           {isSubmitting ? 'Ingresando...' : 'Ingresar'}
         </button>

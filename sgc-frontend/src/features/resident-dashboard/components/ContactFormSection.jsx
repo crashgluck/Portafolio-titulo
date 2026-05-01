@@ -13,8 +13,8 @@ const ContactFormSection = () => {
   }
 
   return (
-    <section className="bg-white/95 p-6 md:p-8 rounded-2xl border border-stone-200 shadow-sm">
-      <h2 className="text-xl font-bold text-stone-900 uppercase tracking-wide mb-6 border-b border-stone-200 pb-4">
+    <section className="surface-panel-soft p-6 md:p-8 animate-fade-in-up">
+      <h2 className="mb-6 border-b border-stone-200 pb-4 text-xl font-bold uppercase tracking-wide text-stone-900">
         Datos de contacto
       </h2>
 
@@ -38,14 +38,18 @@ const ContactFormSection = () => {
         <div className="mt-2 flex justify-end">
           <button
             type="submit"
-            className="bg-amber-700 text-amber-50 px-6 py-2.5 rounded-lg font-semibold hover:bg-amber-800 transition-colors shadow-sm"
+            className="btn-primary bg-amber-700 text-amber-50 hover:bg-amber-800"
           >
             Guardar cambios
           </button>
         </div>
       </form>
 
-      {feedback && <p className="mt-4 text-sm text-emerald-700 font-medium">{feedback}</p>}
+      {feedback && (
+        <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+          {feedback}
+        </p>
+      )}
     </section>
   )
 }

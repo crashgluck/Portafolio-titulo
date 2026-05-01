@@ -16,7 +16,7 @@ const FileUploader = ({
     setError('')
 
     if (file.size > maxSizeMB * 1024 * 1024) {
-      setError(`El archivo es muy pesado. Maximo permitido: ${maxSizeMB}MB.`)
+      setError(`El archivo supera el maximo permitido de ${maxSizeMB}MB.`)
       setSelectedFile(null)
       return
     }
@@ -29,16 +29,25 @@ const FileUploader = ({
     event.stopPropagation()
     setSelectedFile(null)
     setError('')
-    if (fileInputRef.current) fileInputRef.current.value = ''
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+
     onFileSelect?.(null)
   }
 
+  const isActiveDrop = isDragging && !disabled
+  const canOpenPicker = !disabled
+
   return (
-    <div className="flex flex-col w-full mb-4">
+    <div className="mb-4 flex w-full flex-col">
       {label && <span className="mb-2 text-sm font-semibold text-stone-700">{label}</span>}
 
-      <div
-        onClick={() => !disabled && fileInputRef.current?.click()}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => canOpenPicker && fileInputRef.current?.click()}
         onDragOver={(event) => {
           event.preventDefault()
           if (!disabled) setIsDragging(true)
@@ -54,14 +63,15 @@ const FileUploader = ({
           const [file] = event.dataTransfer.files
           if (file) validateAndProcessFile(file)
         }}
-        className={`
-          relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl transition-all duration-200 text-center
-          ${disabled ? 'bg-stone-100 border-stone-300 cursor-not-allowed opacity-70' : 'cursor-pointer'}
-          ${isDragging ? 'bg-amber-100/40 border-amber-600' : 'bg-stone-50 hover:bg-stone-100'}
-          ${!isDragging && !disabled && !selectedFile ? 'border-stone-200 hover:border-amber-600' : ''}
-          ${selectedFile ? 'border-emerald-400 bg-emerald-50/70' : ''}
-          ${error ? 'border-red-400 bg-red-50/60' : ''}
-        `}
+        className={`relative flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-6 text-center transition-all duration-200 ${
+          disabled
+            ? 'cursor-not-allowed border-stone-300 bg-stone-100 opacity-70'
+            : isActiveDrop
+              ? 'border-amber-600 bg-amber-50'
+              : selectedFile
+                ? 'border-emerald-400 bg-emerald-50/70'
+                : 'border-stone-300 bg-stone-50 hover:border-amber-500 hover:bg-stone-100'
+        } ${error ? 'border-red-400 bg-red-50' : ''}`}
       >
         <input
           type="file"
@@ -77,20 +87,20 @@ const FileUploader = ({
 
         {selectedFile ? (
           <div className="flex flex-col items-center">
-            <div className="w-12 h-12 mb-3 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
               </svg>
             </div>
-            <p className="text-sm font-bold text-stone-900 max-w-[220px] truncate" title={selectedFile.name}>
+            <p className="m-0 max-w-[240px] truncate text-sm font-bold text-stone-900" title={selectedFile.name}>
               {selectedFile.name}
             </p>
-            <p className="text-xs text-stone-600 mt-1">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+            <p className="m-0 mt-1 text-xs text-stone-600">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
             {!disabled && (
               <button
                 type="button"
                 onClick={removeFile}
-                className="mt-3 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors px-3 py-1 bg-red-50 rounded-md"
+                className="mt-3 rounded-md bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
               >
                 Quitar archivo
               </button>
@@ -98,21 +108,31 @@ const FileUploader = ({
           </div>
         ) : (
           <div className="flex flex-col items-center">
-            <svg className={`w-10 h-10 mb-3 ${isDragging ? 'text-amber-700' : 'text-stone-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            <svg className={`mb-3 h-10 w-10 ${isActiveDrop ? 'text-amber-700' : 'text-stone-500'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                d="M7 16a4 4 0 01-.9-7.9A5 5 0 1116 6a4 4 0 011 8M12 12v8m0-8l-3 3m3-3l3 3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.7}
+              />
             </svg>
-            <p className="text-sm font-medium text-stone-900">
-              <span className="text-amber-700 hover:underline">Haz clic para buscar</span> o arrastra un archivo aqui
+            <p className="m-0 text-sm font-medium text-stone-900">
+              <span className="font-bold text-amber-700">Haz clic para seleccionar</span> o arrastra el archivo aqui
             </p>
-            <p className="text-xs text-stone-600 mt-1">PDF, JPG o PNG (Max. {maxSizeMB}MB)</p>
+            <p className="m-0 mt-1 text-xs text-stone-600">PDF, JPG o PNG (maximo {maxSizeMB}MB)</p>
           </div>
         )}
-      </div>
+      </button>
 
       {error && (
-        <span className="mt-2 text-xs font-medium text-red-500 flex items-center gap-1">
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <span className="mt-2 flex items-center gap-1 text-xs font-medium text-red-600">
+          <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path
+              d="M12 8.5v4m0 3h.01m8-3.5A8 8 0 114 12a8 8 0 0116 0z"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+            />
           </svg>
           {error}
         </span>

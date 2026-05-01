@@ -29,21 +29,21 @@ const PaymentFormSection = ({
     !formData?.receiptFile
 
   return (
-    <section id={sectionId} className="bg-white/95 p-6 md:p-8 rounded-2xl border border-stone-200 shadow-sm">
-      <h2 className="text-xl font-bold text-stone-900 uppercase tracking-wide mb-2 border-b border-stone-200 pb-4">
+    <section id={sectionId} className="surface-panel-soft p-6 md:p-8 animate-fade-in-up">
+      <h2 className="mb-2 border-b border-stone-200 pb-4 text-xl font-bold uppercase tracking-wide text-stone-900">
         Informar pago
       </h2>
-      <p className="text-sm text-stone-600 mb-6 mt-4">
+      <p className="mb-6 mt-4 text-sm text-stone-600">
         Selecciona el gasto comun y sube el comprobante para validacion contable.
       </p>
 
       <form onSubmit={onSubmit} className="space-y-3">
-        <div className="flex flex-col w-full mb-4">
+        <div className="mb-4 flex w-full flex-col">
           <label className="mb-1.5 text-sm font-semibold text-stone-700">Gasto comun</label>
           <select
             value={formData?.expenseId || ''}
             onChange={(event) => onChange?.('expenseId', event.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg border bg-stone-50 text-stone-900 border-stone-200 hover:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-600"
+            className="input-base bg-stone-50"
             disabled={disabled || !hasOptions}
             required
           >
@@ -79,12 +79,12 @@ const PaymentFormSection = ({
           />
         </div>
 
-        <div className="flex flex-col w-full mb-4">
+        <div className="mb-4 flex w-full flex-col">
           <label className="mb-1.5 text-sm font-semibold text-stone-700">Metodo de pago</label>
           <select
             value={formData?.paymentMethod || 'transfer'}
             onChange={(event) => onChange?.('paymentMethod', event.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg border bg-stone-50 text-stone-900 border-stone-200 hover:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-600"
+            className="input-base bg-stone-50"
             disabled={disabled}
           >
             {methodOptions.map((method) => (
@@ -101,13 +101,17 @@ const PaymentFormSection = ({
         <button
           type="submit"
           disabled={isSubmitDisabled}
-          className="w-full mt-4 bg-stone-900 text-stone-50 px-6 py-3 rounded-lg font-bold hover:bg-stone-800 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-primary mt-4 w-full"
         >
           {isSubmitting ? 'Enviando...' : 'Enviar a validacion'}
         </button>
       </form>
 
-      {feedback && <p className="mt-4 text-sm text-emerald-700 font-medium">{feedback}</p>}
+      {feedback && (
+        <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+          {feedback}
+        </p>
+      )}
     </section>
   )
 }

@@ -1,47 +1,37 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import useAuth from '@features/auth/hooks/useAuth'
 import useCondominium from '@features/condominium-management/hooks/useCondominium'
-import { 
-  listPaymentsRequest, 
-  listUnitsRequest, 
-  listBillingPeriodsRequest 
-} from '@features/condominium-management/api/billing.api'
+import { listPaymentsRequest, listUnitsRequest, listBillingPeriodsRequest } from '@features/condominium-management/api/billing.api'
 import { formatCurrencyCLP } from '@shared/lib/format'
 
 const CierreMes = () => {
   const { accessToken } = useAuth()
-  
-  // Extraemos lo necesario del contexto global
-  const { 
-    condominiums, 
-    activeCondominiumId, 
-    activeCondominium,
-    setActiveCondominium 
-  } = useCondominium()
-  
+  const { condominiums, activeCondominiumId, activeCondominium, setActiveCondominium } = useCondominium()
+
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
   const [payments, setPayments] = useState([])
   const [units, setUnits] = useState([])
   const [periods, setPeriods] = useState([])
 
-  // 1. CARGA DE DATOS
   const loadImpactData = useCallback(async () => {
     if (!accessToken || !activeCondominiumId) return
+
     setLoading(true)
+    setError('')
+
     try {
-      const [pData, uData, perData] = await Promise.all([
+      const [paymentData, unitData, periodData] = await Promise.all([
         listPaymentsRequest(accessToken),
         listUnitsRequest(accessToken),
-        listBillingPeriodsRequest(accessToken)
+        listBillingPeriodsRequest(accessToken),
       ])
-      setPayments(Array.isArray(pData) ? pData : [])
-      setUnits(Array.isArray(uData) ? uData : [])
-      setPeriods(Array.isArray(perData) ? perData : [])
-    } catch (err) {
-      setError('No se pudo cargar el resumen de impacto.')
+      setPayments(Array.isArray(paymentData) ? paymentData : [])
+      setUnits(Array.isArray(unitData) ? unitData : [])
+      setPeriods(Array.isArray(periodData) ? periodData : [])
+    } catch (requestError) {
+      setError(requestError.message || 'No se pudo cargar el resumen de impacto.')
     } finally {
       setLoading(false)
     }
@@ -51,142 +41,149 @@ const CierreMes = () => {
     loadImpactData()
   }, [loadImpactData])
 
-  // 2. CÁLCULOS (Solo para el condominio activo)
   const impactStats = useMemo(() => {
-    const condoUnits = units.filter(u => String(u.condominium) === String(activeCondominiumId))
-    const condoPayments = payments.filter(p => {
-      const unit = units.find(u => u.id === p.unit)
+    const condominiumUnits = units.filter((unit) => String(unit.condominium) === String(activeCondominiumId))
+    const condominiumPayments = payments.filter((payment) => {
+      const unit = units.find((item) => item.id === payment.unit)
       return unit && String(unit.condominium) === String(activeCondominiumId)
     })
 
-    const pendingPayments = condoPayments.filter(p => p.status === 'pending' || p.status === 'rejected')
-    const totalPendingAmount = pendingPayments.reduce((acc, p) => acc + Number(p.amount), 0)
-    const unitsWithDebt = new Set(pendingPayments.map(p => p.unit))
-    const delinquencyRate = condoUnits.length > 0 
-      ? ((unitsWithDebt.size / condoUnits.length) * 100).toFixed(1) 
-      : 0
+    const pendingPayments = condominiumPayments.filter((payment) => payment.status === 'pending' || payment.status === 'rejected')
+    const totalPendingAmount = pendingPayments.reduce((accumulator, payment) => accumulator + Number(payment.amount || 0), 0)
+    const unitsWithDebt = new Set(pendingPayments.map((payment) => payment.unit))
+    const delinquencyRate = condominiumUnits.length > 0 ? ((unitsWithDebt.size / condominiumUnits.length) * 100).toFixed(1) : '0.0'
 
-    const currentPeriod = periods.find(p => !p.is_closed) || { name: 'Periodo Actual' }
+    const currentPeriod = periods.find((period) => period.status !== 'closed')
+    const periodLabel = currentPeriod
+      ? `${currentPeriod.start_date || ''} - ${currentPeriod.end_date || ''}`.trim()
+      : 'Periodo actual'
 
     return {
-      activeUnits: condoUnits.length,
+      activeUnits: condominiumUnits.length,
       delinquencyRate,
       totalPending: totalPendingAmount,
-      periodLabel: currentPeriod.name
+      periodLabel,
     }
   }, [units, payments, periods, activeCondominiumId])
 
   const handleExecute = async () => {
     if (!activeCondominiumId) return
     setStep(2)
+    setError('')
+
     try {
-      // Simulación de cierre (aquí irá la llamada al backend)
-      await new Promise(resolve => setTimeout(resolve, 2500))
+      await new Promise((resolve) => setTimeout(resolve, 2200))
       setStep(3)
-    } catch (err) {
+    } catch {
       setError('Error al procesar el cierre.')
       setStep(1)
     }
   }
 
   return (
-    <div className="max-w-3xl space-y-6 animate-in fade-in">
-      
-      {/* SECCIÓN 1: SELECTOR DE CONDOMINIO (Igual que en las otras pestañas) */}
-      <section className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
-        <h3 className="font-bold text-stone-900 mb-4 text-sm uppercase tracking-wider">Contexto de Gestión</h3>
+    <div className="max-w-3xl space-y-6 animate-fade-in-up">
+      <section className="surface-panel p-5">
+        <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-stone-900">Contexto de gestion</h3>
         <select
           value={activeCondominiumId || ''}
-          onChange={(e) => {
-            setActiveCondominium(e.target.value)
-            setStep(1) // Reiniciamos el proceso si cambia de edificio
+          onChange={(event) => {
+            setActiveCondominium(event.target.value)
+            setStep(1)
           }}
-          className="w-full p-2.5 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-500/30"
+          className="input-base"
         >
           {!condominiums.length && <option value="">Sin condominios disponibles</option>}
           <option value="">Seleccione un condominio para cerrar mes...</option>
-          {condominiums.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {condominiums.map((condominium) => (
+            <option key={condominium.id} value={condominium.id}>
+              {condominium.name}
+            </option>
+          ))}
         </select>
       </section>
 
-      {/* SECCIÓN 2: PROCESO DE CIERRE */}
-      <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-        
-        {/* Cabecera dinámica según el condominio elegido */}
-        <div className="px-6 py-5 border-b border-stone-200 bg-stone-900 text-white flex items-center gap-3">
-          <div className="p-2 bg-amber-500/20 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-amber-500">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2.25m0 4.5h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <section className="surface-panel overflow-hidden">
+        <div className="flex items-center gap-3 border-b border-stone-200 bg-stone-900 px-6 py-5 text-white">
+          <div className="rounded-lg bg-amber-500/20 p-2">
+            <svg className="h-6 w-6 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                d="M12 9.5v2.75m0 3h.01m8.24-3a8.25 8.25 0 11-16.5 0 8.25 8.25 0 0116.5 0z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.8}
+              />
             </svg>
           </div>
           <div>
-            <h3 className="text-lg font-bold">
-              {activeCondominium ? `Cierre Mensual: ${activeCondominium.name}` : 'Ejecución de Cierre'}
+            <h3 className="m-0 text-lg font-bold">
+              {activeCondominium ? `Cierre mensual: ${activeCondominium.name}` : 'Ejecucion de cierre'}
             </h3>
-            <p className="text-sm text-stone-400 mt-1">
-              {activeCondominium ? impactStats.periodLabel : 'Seleccione un edificio para continuar'}
-            </p>
+            <p className="m-0 mt-1 text-sm text-stone-400">{impactStats.periodLabel}</p>
           </div>
         </div>
 
         <div className="p-6 md:p-8">
           {!activeCondominiumId ? (
-            <div className="text-center py-10">
-              <p className="text-stone-500 italic">Debe seleccionar un condominio en el panel superior para ver el impacto del cierre.</p>
-            </div>
+            <p className="py-10 text-center italic text-stone-500">
+              Debes seleccionar un condominio para revisar impacto y ejecutar el cierre.
+            </p>
           ) : (
             <>
-              {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+              {error && <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
               {step === 1 && (
                 <div className="space-y-6">
-                  <p className="text-stone-600 text-sm leading-relaxed">
-                    Esta acción calculará automáticamente los Gastos Comunes, aplicará multas y emitirá los cobros para las <strong>{impactStats.activeUnits} unidades</strong> de este edificio.
+                  <p className="text-sm leading-relaxed text-stone-600">
+                    Esta accion emitira cobros mensuales para <strong>{impactStats.activeUnits} unidades</strong> y
+                    consolidara pagos pendientes.
                   </p>
 
-                  <div className="bg-stone-50 p-6 rounded-xl border border-stone-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 gap-6 rounded-xl border border-stone-200 bg-stone-50 p-6 md:grid-cols-3">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-stone-400 uppercase">Deptos</span>
+                      <span className="text-[10px] font-bold uppercase text-stone-400">Unidades activas</span>
                       <span className="text-xl font-bold text-stone-800">{impactStats.activeUnits}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-stone-400 uppercase">Morosidad</span>
+                      <span className="text-[10px] font-bold uppercase text-stone-400">Morosidad</span>
                       <span className="text-xl font-bold text-red-600">{impactStats.delinquencyRate}%</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-stone-400 uppercase">Por Recaudar</span>
+                      <span className="text-[10px] font-bold uppercase text-stone-400">Por recaudar</span>
                       <span className="text-xl font-bold text-amber-600">{formatCurrencyCLP(impactStats.totalPending)}</span>
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-stone-100">
-                    <button 
-                      onClick={handleExecute}
-                      disabled={loading || impactStats.activeUnits === 0}
-                      className="w-full md:w-auto px-10 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-200 flex items-center justify-center gap-2"
-                    >
-                      Ejecutar Cierre y Emitir Cobros
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleExecute}
+                    disabled={loading || impactStats.activeUnits === 0}
+                    className="rounded-xl bg-red-600 px-10 py-3 font-bold text-white shadow-lg shadow-red-200 transition-all hover:bg-red-700 disabled:opacity-60"
+                  >
+                    Ejecutar cierre y emitir cobros
+                  </button>
                 </div>
               )}
 
               {step === 2 && (
-                <div className="py-16 text-center space-y-4">
-                  <div className="w-12 h-12 border-4 border-stone-100 border-t-amber-500 rounded-full animate-spin mx-auto"></div>
+                <div className="space-y-4 py-14 text-center">
+                  <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-stone-100 border-t-amber-500" />
                   <h3 className="text-xl font-bold text-stone-800">Procesando cierre masivo...</h3>
                 </div>
               )}
 
               {step === 3 && (
-                <div className="py-10 text-center space-y-6">
-                  <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-10 h-10">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                <div className="space-y-6 py-10 text-center">
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                    <svg className="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M4.5 12.75l6 6 9-13.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} />
                     </svg>
                   </div>
-                  <h3 className="text-2xl font-bold text-stone-800">¡Cierre Finalizado!</h3>
-                  <button onClick={() => setStep(1)} className="px-8 py-2.5 bg-stone-900 text-white font-bold rounded-lg hover:bg-stone-800 transition-colors">
+                  <h3 className="text-2xl font-bold text-stone-800">Cierre finalizado</h3>
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="rounded-lg bg-stone-900 px-8 py-2.5 font-bold text-white transition-colors hover:bg-stone-800"
+                  >
                     Volver
                   </button>
                 </div>
@@ -194,7 +191,7 @@ const CierreMes = () => {
             </>
           )}
         </div>
-      </div>
+      </section>
     </div>
   )
 }

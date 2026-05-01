@@ -2,40 +2,52 @@ import { API_CONFIG } from '../config/api'
 
 const createUrl = (path) => `${API_CONFIG.baseUrl}${path}`
 
-// NUEVO: Ahora parseApiError devuelve el texto simple Y el objeto completo (rawData)
+const extractFirstErrorMessage = (value) => {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) return extractFirstErrorMessage(value[0])
+  if (typeof value === 'object') {
+    const first = Object.values(value)[0]
+    return extractFirstErrorMessage(first)
+  }
+  return ''
+}
+
 const parseApiError = async (response) => {
-  let message = `Error API (${response.status})`
+  const fallbackMessage = `Error API (${response.status})`
   let rawData = {}
 
   try {
     const data = await response.json()
-    rawData = data // Guardamos la respuesta intacta de Django aquí
+    rawData = data
 
     if (typeof data === 'string') {
       return { message: data, rawData }
     }
 
-    if (data.detail) {
-      return { message: data.detail, rawData }
+    const knownMessage =
+      extractFirstErrorMessage(data?.detail) ||
+      extractFirstErrorMessage(data?.non_field_errors) ||
+      extractFirstErrorMessage(data?.message)
+
+    if (knownMessage) {
+      return { message: knownMessage, rawData }
     }
 
     const firstEntry = Object.entries(data || {})[0]
     if (!firstEntry) {
-      return { message, rawData }
+      return { message: fallbackMessage, rawData }
     }
 
-    const [, value] = firstEntry
-    if (Array.isArray(value)) {
-      return { message: String(value[0]), rawData }
-    }
+    const [, firstValue] = firstEntry
+    const extractedMessage = extractFirstErrorMessage(firstValue)
 
-    if (typeof value === 'string') {
-      return { message: value, rawData }
+    return {
+      message: extractedMessage || fallbackMessage,
+      rawData,
     }
-
-    return { message, rawData }
   } catch {
-    return { message, rawData }
+    return { message: fallbackMessage, rawData }
   }
 }
 
@@ -57,10 +69,9 @@ const request = async (path, options = {}) => {
     })
 
     if (!response.ok) {
-      // NUEVO: manejar error para sginarlo a su textarea especifco
       const { message, rawData } = await parseApiError(response)
       const error = new Error(message)
-      error.fieldErrors = rawData 
+      error.fieldErrors = rawData
       throw error
     }
 
@@ -69,6 +80,16 @@ const request = async (path, options = {}) => {
     }
 
     return await response.json()
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('La solicitud tardo demasiado. Intenta nuevamente.')
+    }
+
+    if (error instanceof TypeError) {
+      throw new Error('No fue posible conectar con el servidor.')
+    }
+
+    throw error
   } finally {
     clearTimeout(timeoutId)
   }

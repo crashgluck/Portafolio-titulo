@@ -1,5 +1,6 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import DashboardLayout from '@shared/ui/DashboardLayout'
+import DataTable from '@shared/ui/DataTable'
 import useAuth from '@features/auth/hooks/useAuth'
 import { residentNavItems } from '@features/resident-dashboard/data/dashboardData'
 import {
@@ -25,6 +26,7 @@ const ResidentReservationsPage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [formData, setFormData] = useState({
     spaceCode: '',
     date: '',
@@ -33,9 +35,7 @@ const ResidentReservationsPage = () => {
   })
 
   const loadData = useCallback(async () => {
-    if (!accessToken) {
-      return
-    }
+    if (!accessToken) return
 
     setIsLoading(true)
     setError('')
@@ -46,8 +46,8 @@ const ResidentReservationsPage = () => {
         listReservationsRequest(accessToken),
       ])
 
-      setCommonSpaces(spacesResponse)
-      setReservations(reservationsResponse.map(mapReservationToRow))
+      setCommonSpaces(Array.isArray(spacesResponse) ? spacesResponse : [])
+      setReservations(Array.isArray(reservationsResponse) ? reservationsResponse.map(mapReservationToRow) : [])
     } catch (loadError) {
       setError(loadError.message || 'No fue posible cargar las reservas.')
     } finally {
@@ -65,15 +65,12 @@ const ResidentReservationsPage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-
-    if (!canSubmit) {
-      return
-    }
+    if (!canSubmit) return
 
     const [startTime, endTime] = formData.timeSlot.split('|')
-
     setIsSubmitting(true)
     setError('')
+    setSuccess('')
 
     try {
       const createdReservation = await createReservationRequest(
@@ -98,6 +95,7 @@ const ResidentReservationsPage = () => {
         timeSlot: timeSlotOptions[0].value,
         notes: '',
       })
+      setSuccess('Solicitud enviada correctamente. Quedara pendiente de revision.')
     } catch (submitError) {
       setError(submitError.message || 'No fue posible crear la reserva.')
     } finally {
@@ -105,46 +103,52 @@ const ResidentReservationsPage = () => {
     }
   }
 
+  const reservationColumns = [
+    { header: 'Espacio', accessor: 'commonSpaceLabel' },
+    { header: 'Fecha', accessor: 'reservationDate' },
+    { header: 'Horario', accessor: 'summary' },
+    {
+      header: 'Estado',
+      accessor: (row) => (
+        <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${toReservationStatusBadge(row.status)}`}>
+          {row.statusLabel}
+        </span>
+      ),
+    },
+  ]
+
   return (
-    <DashboardLayout
-      userRole='Residente'
-      userName={realName}
-      title='Mis Reservas'
-      navItems={residentNavItems}
-    >
-      <div className='max-w-5xl mx-auto pb-12 space-y-8'>
+    <DashboardLayout userRole="Residente" userName={realName} title="Mis Reservas" navItems={residentNavItems}>
+      <div className="mx-auto max-w-5xl space-y-8 pb-12">
         <div>
-          <h2 className='text-2xl font-bold text-stone-900'>Reserva de Espacios Comunes</h2>
-          <p className='text-stone-500 mt-1'>Solicita quinchos, canchas y salas de eventos.</p>
+          <h2 className="text-2xl font-bold text-stone-900">Reserva de Espacios Comunes</h2>
+          <p className="mt-1 text-stone-500">Solicita quinchos, canchas y salas de eventos.</p>
         </div>
 
-        {error && (
-          <div className='rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700'>{error}</div>
-        )}
+        {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
+        {success && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{success}</div>}
 
         {hasDebt ? (
-          <div className='bg-red-50 border-l-4 border-red-500 p-6 rounded-r-xl shadow-sm'>
-            <div>
-              <h3 className='text-lg font-bold text-red-800'>Servicio suspendido por deuda</h3>
-              <p className='text-red-600 mt-1'>Debes regularizar tus pagos para poder crear nuevas reservas.</p>
-            </div>
+          <div className="rounded-r-xl border-l-4 border-red-500 bg-red-50 p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-red-800">Servicio suspendido por deuda</h3>
+            <p className="mt-1 text-red-600">Debes regularizar tus pagos para crear nuevas reservas.</p>
           </div>
         ) : (
-          <div className='bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden'>
-            <div className='px-6 py-4 border-b border-stone-200 bg-stone-50'>
-              <h3 className='font-bold text-stone-800'>Nueva Solicitud</h3>
+          <section className="surface-panel-soft overflow-hidden animate-fade-in-up">
+            <div className="border-b border-stone-200 bg-stone-50 px-6 py-4">
+              <h3 className="m-0 font-bold text-stone-800">Nueva solicitud</h3>
             </div>
-            <div className='p-6'>
-              <form onSubmit={handleSubmit} className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div className="p-6">
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className='block text-sm font-semibold text-stone-700 mb-1'>Espacio</label>
+                  <label className="mb-1 block text-sm font-semibold text-stone-700">Espacio</label>
                   <select
                     required
                     value={formData.spaceCode}
                     onChange={(event) => setFormData((previous) => ({ ...previous, spaceCode: event.target.value }))}
-                    className='w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none'
+                    className="input-base"
                   >
-                    <option value=''>Selecciona...</option>
+                    <option value="">Selecciona...</option>
                     {commonSpaces.map((space) => (
                       <option key={space.id} value={space.code}>
                         {space.name} (Max: {space.capacity} pax)
@@ -154,24 +158,24 @@ const ResidentReservationsPage = () => {
                 </div>
 
                 <div>
-                  <label className='block text-sm font-semibold text-stone-700 mb-1'>Fecha</label>
+                  <label className="mb-1 block text-sm font-semibold text-stone-700">Fecha</label>
                   <input
-                    type='date'
+                    type="date"
                     required
                     min={new Date().toISOString().split('T')[0]}
                     value={formData.date}
                     onChange={(event) => setFormData((previous) => ({ ...previous, date: event.target.value }))}
-                    className='w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none'
+                    className="input-base"
                   />
                 </div>
 
                 <div>
-                  <label className='block text-sm font-semibold text-stone-700 mb-1'>Bloque Horario</label>
+                  <label className="mb-1 block text-sm font-semibold text-stone-700">Bloque horario</label>
                   <select
                     required
                     value={formData.timeSlot}
                     onChange={(event) => setFormData((previous) => ({ ...previous, timeSlot: event.target.value }))}
-                    className='w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none'
+                    className="input-base"
                   >
                     {timeSlotOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -182,79 +186,37 @@ const ResidentReservationsPage = () => {
                 </div>
 
                 <div>
-                  <label className='block text-sm font-semibold text-stone-700 mb-1'>Observaciones</label>
+                  <label className="mb-1 block text-sm font-semibold text-stone-700">Observaciones</label>
                   <input
-                    type='text'
+                    type="text"
                     value={formData.notes}
                     onChange={(event) => setFormData((previous) => ({ ...previous, notes: event.target.value }))}
-                    className='w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none'
-                    placeholder='Opcional'
+                    className="input-base"
+                    placeholder="Opcional"
                   />
                 </div>
 
-                <div className='md:col-span-2'>
-                  <button
-                    type='submit'
-                    disabled={isSubmitting || !canSubmit}
-                    className='w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 rounded-lg disabled:opacity-70 transition-colors'
-                  >
-                    {isSubmitting ? 'Procesando...' : 'Solicitar Reserva'}
+                <div className="md:col-span-2">
+                  <button type="submit" disabled={isSubmitting || !canSubmit} className="btn-primary w-full bg-amber-600 hover:bg-amber-700">
+                    {isSubmitting ? 'Procesando...' : 'Solicitar reserva'}
                   </button>
                 </div>
               </form>
             </div>
-          </div>
+          </section>
         )}
 
-        <div className='bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden'>
-          <div className='px-6 py-4 border-b border-stone-200 bg-stone-50'>
-            <h3 className='font-bold text-stone-800'>Mis Solicitudes Anteriores</h3>
-          </div>
-          <div className='overflow-x-auto'>
-            <table className='w-full text-left border-collapse'>
-              <thead>
-                <tr className='bg-white text-stone-500 text-xs uppercase tracking-wider border-b border-stone-200'>
-                  <th className='px-6 py-4 font-semibold'>Espacio</th>
-                  <th className='px-6 py-4 font-semibold'>Fecha</th>
-                  <th className='px-6 py-4 font-semibold'>Horario</th>
-                  <th className='px-6 py-4 font-semibold'>Estado</th>
-                </tr>
-              </thead>
-              <tbody className='divide-y divide-stone-200'>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan='4' className='px-6 py-8 text-center text-stone-500'>
-                      Cargando reservas...
-                    </td>
-                  </tr>
-                ) : reservations.length === 0 ? (
-                  <tr>
-                    <td colSpan='4' className='px-6 py-8 text-center text-stone-500'>
-                      No tienes reservas registradas.
-                    </td>
-                  </tr>
-                ) : (
-                  reservations.map((reservation) => (
-                    <tr key={reservation.id} className='hover:bg-stone-50 transition-colors'>
-                      <td className='px-6 py-4 font-medium text-stone-800'>{reservation.commonSpaceLabel}</td>
-                      <td className='px-6 py-4 text-stone-600'>{reservation.reservationDate}</td>
-                      <td className='px-6 py-4 text-stone-600'>{reservation.summary}</td>
-                      <td className='px-6 py-4'>
-                        <span
-                          className={`inline-flex rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${toReservationStatusBadge(
-                            reservation.status,
-                          )}`}
-                        >
-                          {reservation.statusLabel}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <section className="space-y-3">
+          <h3 className="text-lg font-bold text-stone-900">Mis solicitudes anteriores</h3>
+          <DataTable
+            columns={reservationColumns}
+            data={reservations}
+            isLoading={isLoading}
+            emptyMessage="No tienes reservas registradas."
+            rowKey="id"
+            title="Historial de reservas"
+          />
+        </section>
       </div>
     </DashboardLayout>
   )

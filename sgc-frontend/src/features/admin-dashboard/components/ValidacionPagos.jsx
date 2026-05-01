@@ -3,16 +3,13 @@ import useAuth from '@features/auth/hooks/useAuth'
 import useCondominium from '@features/condominium-management/hooks/useCondominium'
 import { API_CONFIG } from '@shared/config/api'
 import {
-  listBillingPeriodsRequest,
   listPaymentReceiptsRequest,
   listPaymentsRequest,
-  listResidentAssignmentsRequest,
   listUnitsRequest,
   patchPaymentRequest,
 } from '@features/condominium-management/api/billing.api'
 import { formatCurrencyCLP } from '@shared/lib/format'
 
-// --- HELPERS DE FORMATO ---
 const toStatusPayload = (status) => ({
   status,
   validation_date: new Date().toISOString().split('T')[0],
@@ -39,55 +36,38 @@ const paymentStatusMeta = {
 
 const ValidacionPagos = () => {
   const { accessToken } = useAuth()
-  const {
-    condominiums,
-    activeCondominiumId,
-    activeCondominium,
-    isLoading: isLoadingCondominiums,
-    setActiveCondominium,
-    reloadCondominiums,
-  } = useCondominium()
+  const { condominiums, activeCondominiumId, setActiveCondominium } = useCondominium()
 
-  // --- ESTADOS DE DATOS ---
   const [payments, setPayments] = useState([])
   const [units, setUnits] = useState([])
-  const [assignments, setAssignments] = useState([])
   const [receipts, setReceipts] = useState([])
-  const [periods, setPeriods] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activePaymentId, setActivePaymentId] = useState(null)
-
 
   const [statusFilter, setStatusFilter] = useState('all')
   const [methodFilter, setMethodFilter] = useState('all')
   const [activeUnitId, setActiveUnitId] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
 
-
   const loadData = useCallback(async () => {
     if (!accessToken) return
+
     setLoading(true)
     setError('')
 
     try {
-
-      const [paymentRows, unitRows, assignmentRows, receiptRows, periodRows] = await Promise.all([
+      const [paymentRows, unitRows, receiptRows] = await Promise.all([
         listPaymentsRequest(accessToken),
         listUnitsRequest(accessToken),
-        listResidentAssignmentsRequest(accessToken),
         listPaymentReceiptsRequest(accessToken),
-        listBillingPeriodsRequest(accessToken),
       ])
 
       setPayments(Array.isArray(paymentRows) ? paymentRows : [])
       setUnits(Array.isArray(unitRows) ? unitRows : [])
-      setAssignments(Array.isArray(assignmentRows) ? assignmentRows : [])
       setReceipts(Array.isArray(receiptRows) ? receiptRows : [])
-      setPeriods(Array.isArray(periodRows) ? periodRows : [])
-    } catch (err) {
-      console.error(err)
-      setError('Error al cargar la gestión de pagos. Verifique su conexión.')
+    } catch (requestError) {
+      setError(requestError.message || 'Error al cargar la gestion de pagos.')
     } finally {
       setLoading(false)
     }
@@ -97,35 +77,37 @@ const ValidacionPagos = () => {
     loadData()
   }, [loadData])
 
-  // Resetear filtro de unidad si cambia el condominio
   useEffect(() => {
     setActiveUnitId('all')
   }, [activeCondominiumId])
 
-  // --- LÓGICA DE FILTRADO Y CRUCE ---
   const unitById = useMemo(() => {
-    return units.reduce((acc, u) => ({ ...acc, [u.id]: u }), {})
+    return units.reduce((accumulator, unit) => {
+      accumulator[unit.id] = unit
+      return accumulator
+    }, {})
   }, [units])
 
   const availableUnits = useMemo(() => {
     if (!activeCondominiumId) return []
-    return units.filter(u => String(u.condominium) === String(activeCondominiumId))
+    return units.filter((unit) => String(unit.condominium) === String(activeCondominiumId))
   }, [units, activeCondominiumId])
 
   const paymentRows = useMemo(() => {
-    return payments.map((p) => {
-      const unit = unitById[p.unit]
-      const meta = paymentStatusMeta[p.status] || { label: p.status, badgeClass: 'bg-stone-100' }
-      
+    return payments.map((payment) => {
+      const unit = unitById[payment.unit]
+      const meta = paymentStatusMeta[payment.status] || { label: payment.status, badgeClass: 'bg-stone-100 text-stone-700' }
+      const receipt = receipts.find((item) => item.payment === payment.id)
+
       return {
-        ...p,
+        ...payment,
         statusLabel: meta.label,
         statusClass: meta.badgeClass,
-        amountLabel: formatCurrencyCLP(p.amount),
-        unitLabel: unit?.number ? `Depto ${unit.number}` : `Unidad #${p.unit}`,
+        amountLabel: formatCurrencyCLP(payment.amount),
+        unitLabel: unit?.number ? `Depto ${unit.number}` : `Unidad #${payment.unit}`,
         condominiumId: unit?.condominium || null,
-        methodLabel: paymentMethodLabel[p.payment_method] || p.payment_method,
-        receipt: receipts.find(r => r.payment === p.id)
+        methodLabel: paymentMethodLabel[payment.payment_method] || payment.payment_method,
+        receiptFile: receipt?.file || '',
       }
     })
   }, [payments, unitById, receipts])
@@ -135,20 +117,23 @@ const ValidacionPagos = () => {
       if (activeCondominiumId && String(row.condominiumId) !== String(activeCondominiumId)) return false
       if (activeUnitId !== 'all' && String(row.unit) !== String(activeUnitId)) return false
       if (statusFilter !== 'all' && row.status !== statusFilter) return false
-      if (methodFilter !== 'all' && row.method !== methodFilter) return false
-      
-      const term = searchTerm.toLowerCase()
+      if (methodFilter !== 'all' && row.payment_method !== methodFilter) return false
+
+      const term = searchTerm.trim().toLowerCase()
+      if (!term) return true
       return row.unitLabel.toLowerCase().includes(term) || String(row.id).includes(term)
     })
   }, [paymentRows, activeCondominiumId, activeUnitId, statusFilter, methodFilter, searchTerm])
 
   const onUpdateStatus = async (paymentId, nextStatus) => {
     setActivePaymentId(paymentId)
+    setError('')
+
     try {
       await patchPaymentRequest(paymentId, toStatusPayload(nextStatus), accessToken)
       await loadData()
-    } catch (err) {
-      setError('No se pudo actualizar el estado.')
+    } catch (requestError) {
+      setError(requestError.message || 'No se pudo actualizar el estado del pago.')
     } finally {
       setActivePaymentId(null)
     }
@@ -156,108 +141,139 @@ const ValidacionPagos = () => {
 
   return (
     <div className="space-y-6">
-      {error && <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">{error}</div>}
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>}
 
-      {/* 1. SELECTOR DE CONDOMINIO (CONTEXTO) */}
-      <section className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
-        <h3 className="font-bold text-stone-900 mb-4">Contexto de Condominio</h3>
+      <section className="surface-panel p-5">
+        <h3 className="mb-4 font-bold text-stone-900">Contexto de condominio</h3>
         <select
           value={activeCondominiumId || ''}
-          onChange={(e) => setActiveCondominium(e.target.value)}
-          className="w-full p-2 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-500/30"
+          onChange={(event) => setActiveCondominium(event.target.value)}
+          className="input-base"
         >
           {!condominiums.length && <option value="">Sin condominios disponibles</option>}
           <option value="">Seleccione un edificio...</option>
-          {condominiums.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {condominiums.map((condominium) => (
+            <option key={condominium.id} value={condominium.id}>
+              {condominium.name}
+            </option>
+          ))}
         </select>
       </section>
 
-      {/* 2. FILTROS EN CASCADA */}
-      <section className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm grid gap-4 md:grid-cols-4">
+      <section className="surface-panel grid gap-4 p-5 md:grid-cols-4">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold text-stone-500 uppercase">Estado</label>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="p-2 border rounded-lg text-sm">
+          <label className="text-xs font-bold uppercase text-stone-500">Estado</label>
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="input-base py-2">
             <option value="all">Todos</option>
             <option value="pending">Pendientes</option>
             <option value="approved">Aprobados</option>
+            <option value="rejected">Rechazados</option>
           </select>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold text-stone-500 uppercase">Unidad / Depto</label>
-          <select 
-            value={activeUnitId} 
-            onChange={(e) => setActiveUnitId(e.target.value)}
-            disabled={!activeCondominiumId}
-            className="p-2 border rounded-lg text-sm disabled:bg-stone-50"
-          >
-            <option value="all">Todas las unidades</option>
-            {availableUnits.map(u => <option key={u.id} value={u.id}>Depto {u.number}</option>)}
+          <label className="text-xs font-bold uppercase text-stone-500">Metodo</label>
+          <select value={methodFilter} onChange={(event) => setMethodFilter(event.target.value)} className="input-base py-2">
+            <option value="all">Todos</option>
+            <option value="transfer">Transferencia</option>
+            <option value="card">Tarjeta</option>
+            <option value="cash">Efectivo</option>
           </select>
         </div>
 
-        <div className="md:col-span-2 flex flex-col gap-1">
-          <label className="text-xs font-bold text-stone-500 uppercase">Buscador rápido</label>
-          <input 
-            type="text" 
-            placeholder="Buscar por ID o Depto..." 
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-bold uppercase text-stone-500">Unidad</label>
+          <select
+            value={activeUnitId}
+            onChange={(event) => setActiveUnitId(event.target.value)}
+            disabled={!activeCondominiumId}
+            className="input-base py-2 disabled:bg-stone-100"
+          >
+            <option value="all">Todas las unidades</option>
+            {availableUnits.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                Depto {unit.number}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-bold uppercase text-stone-500">Buscador rapido</label>
+          <input
+            type="text"
+            placeholder="ID o Depto..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="p-2 border rounded-lg text-sm"
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="input-base py-2"
           />
         </div>
       </section>
 
-      {/* 3. LISTADO DE PAGOS */}
-      <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
+      <section className="surface-panel overflow-hidden">
         {loading ? (
           <div className="p-10 text-center text-stone-500">Cargando registros...</div>
         ) : filteredRows.length === 0 ? (
           <div className="p-10 text-center text-stone-500">No se encontraron pagos con estos filtros.</div>
         ) : (
           <ul className="divide-y divide-stone-100">
-            {filteredRows.map((p) => (
-              <li key={p.id} className="p-5 flex flex-col md:flex-row justify-between items-center gap-4 hover:bg-stone-50 transition-colors">
-                <div className="flex items-center gap-4 w-full">
-                  <div className="bg-stone-100 px-4 py-2 rounded-lg text-center">
+            {filteredRows.map((payment) => (
+              <li key={payment.id} className="flex flex-col gap-4 p-5 transition-colors hover:bg-stone-50 md:flex-row md:items-center md:justify-between">
+                <div className="flex w-full items-center gap-4">
+                  <div className="rounded-lg bg-stone-100 px-4 py-2 text-center">
                     <span className="block text-[10px] font-bold text-stone-400">ID</span>
-                    <span className="font-bold text-stone-700">#{p.id}</span>
+                    <span className="font-bold text-stone-700">#{payment.id}</span>
                   </div>
-                  <div>
-                    <h4 className="font-bold text-stone-900">{p.amountLabel}</h4>
-                    <p className="text-sm text-stone-600">{p.unitLabel} • {p.methodLabel}</p>
+                  <div className="min-w-0">
+                    <h4 className="m-0 truncate font-bold text-stone-900">{payment.amountLabel}</h4>
+                    <p className="m-0 truncate text-sm text-stone-600">
+                      {payment.unitLabel} - {payment.methodLabel}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${p.statusClass}`}>
-                    {p.statusLabel}
-                  </span>
-                  
-                  {p.status === 'pending' && (
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => onUpdateStatus(p.id, 'approved')}
-                        disabled={activePaymentId === p.id}
-                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors"
+                <div className="flex w-full flex-wrap items-center justify-end gap-2 md:w-auto">
+                  {payment.receiptFile ? (
+                    <a
+                      href={toAbsoluteReceiptUrl(payment.receiptFile)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-secondary px-3 py-2 text-xs"
+                    >
+                      Ver comprobante
+                    </a>
+                  ) : (
+                    <span className="rounded-lg bg-stone-100 px-3 py-2 text-xs font-semibold text-stone-500">Sin comprobante</span>
+                  )}
+
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${payment.statusClass}`}>{payment.statusLabel}</span>
+
+                  {payment.status === 'pending' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStatus(payment.id, 'approved')}
+                        disabled={activePaymentId === payment.id}
+                        className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-60"
                       >
                         Aprobar
                       </button>
-                      <button 
-                        onClick={() => onUpdateStatus(p.id, 'rejected')}
-                        disabled={activePaymentId === p.id}
-                        className="border border-red-200 text-red-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors"
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStatus(payment.id, 'rejected')}
+                        disabled={activePaymentId === payment.id}
+                        className="rounded-lg border border-red-200 px-4 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
                       >
                         Rechazar
                       </button>
-                    </div>
+                    </>
                   )}
                 </div>
               </li>
             ))}
           </ul>
         )}
-      </div>
+      </section>
     </div>
   )
 }

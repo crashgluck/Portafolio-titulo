@@ -68,7 +68,7 @@ const RegisterPage = () => {
         </>
       }
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="animate-fade-in">
         <FormInput
           label="RUT"
           value={formData.rut}
@@ -106,7 +106,7 @@ const RegisterPage = () => {
           id="role"
           value={formData.role}
           onChange={handleChange('role')}
-          className="w-full px-4 py-2.5 rounded-lg border bg-stone-50 text-stone-900 border-stone-200 hover:border-amber-600 focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500/30 mb-4"
+          className="input-base mb-4 bg-stone-50"
         >
           {roleOptions.map((role) => (
             <option key={role.value} value={role.value}>
@@ -132,12 +132,16 @@ const RegisterPage = () => {
           required
         />
 
-        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+            {error}
+          </div>
+        )}
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-amber-700 text-amber-50 py-2.5 rounded-lg font-semibold hover:bg-amber-800 transition-colors disabled:opacity-60"
+          className="btn-primary w-full bg-amber-700 text-amber-50 hover:bg-amber-800"
         >
           {isSubmitting ? 'Registrando...' : 'Crear cuenta'}
         </button>
