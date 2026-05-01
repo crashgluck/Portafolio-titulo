@@ -120,6 +120,12 @@ DB_PORT=
 .\.venv\Scripts\python -m pytest
 ```
 
+## Seeds de prueba
+
+- Documentacion completa: `README_SEEDS.md`
+- Comando: `.\venv\Scripts\python manage.py seed_test_data`
+- Opcion de reinicio de datos: `.\venv\Scripts\python manage.py seed_test_data --reset`
+
 ## Pendientes recomendados
 
 1. Endpoint `GET /api/v1/auth/me`.

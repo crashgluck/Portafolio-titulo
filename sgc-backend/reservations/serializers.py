@@ -1,4 +1,4 @@
-﻿from rest_framework import serializers
+from rest_framework import serializers
 
 from users.models import User
 
@@ -41,7 +41,6 @@ class ReservationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         start_time = attrs.get('start_time', getattr(self.instance, 'start_time', None))
         end_time = attrs.get('end_time', getattr(self.instance, 'end_time', None))
-
         if start_time and end_time and start_time >= end_time:
             raise serializers.ValidationError({'end_time': 'La hora de termino debe ser mayor que la hora de inicio.'})
 
@@ -50,7 +49,6 @@ class ReservationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request_user = self.context['request'].user
 
-        # Un residente solo puede reservar en su nombre.
         if request_user.role == User.Role.RESIDENTE:
             validated_data['requester_name'] = request_user.get_full_name().strip() or request_user.email
             validated_data['requester_role'] = request_user.role

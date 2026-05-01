@@ -6,6 +6,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 
 
+def normalize_required_text(value, field_label):
+    normalized = str(value).strip()
+    if not normalized:
+        raise serializers.ValidationError(f'El campo {field_label} es obligatorio.')
+    return normalized
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirmation = serializers.CharField(write_only=True, min_length=8)
@@ -31,6 +38,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirmation']:
             raise serializers.ValidationError({'password_confirmation': 'Las contrasenas no coinciden.'})
+
+        attrs['first_name'] = normalize_required_text(attrs.get('first_name', ''), 'nombre')
+        attrs['last_name'] = normalize_required_text(attrs.get('last_name', ''), 'apellido')
 
         validate_password(attrs['password'])
         return attrs
@@ -92,6 +102,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         if attrs['password'] != attrs['password_confirmation']:
             raise serializers.ValidationError({'password_confirmation': 'Las contrasenas no coinciden.'})
 
+        attrs['first_name'] = normalize_required_text(attrs.get('first_name', ''), 'nombre')
+        attrs['last_name'] = normalize_required_text(attrs.get('last_name', ''), 'apellido')
+
         validate_password(attrs['password'])
         return attrs
 
@@ -128,6 +141,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         password = attrs.get('password')
         password_confirmation = attrs.get('password_confirmation')
+        first_name = attrs.get('first_name')
+        last_name = attrs.get('last_name')
+
+        if first_name is not None:
+            attrs['first_name'] = normalize_required_text(first_name, 'nombre')
+        if last_name is not None:
+            attrs['last_name'] = normalize_required_text(last_name, 'apellido')
 
         if password or password_confirmation:
             if password != password_confirmation:

@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from rest_framework import serializers
+from django.utils import timezone
 
 from users.models import User
 
@@ -94,9 +95,13 @@ class PaymentSerializer(serializers.ModelSerializer):
         request = self.context['request']
         unit = attrs.get('unit') or getattr(self.instance, 'unit', None)
         period = attrs.get('period') or getattr(self.instance, 'period', None)
+        payment_date = attrs.get('payment_date') or getattr(self.instance, 'payment_date', None)
 
         if unit and period and unit.condominium_id != period.condominium_id:
             raise serializers.ValidationError({'unit': 'La unidad debe pertenecer al condominio del periodo.'})
+
+        if payment_date and payment_date > timezone.localdate():
+            raise serializers.ValidationError({'payment_date': 'La fecha de pago no puede ser futura.'})
 
         if request.user.role == User.Role.RESIDENTE:
             has_assignment = ResidentAssignment.objects.filter(
@@ -125,6 +130,17 @@ class PaymentReceiptSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         request = self.context['request']
         payment = attrs.get('payment') or getattr(self.instance, 'payment', None)
+        uploaded_file = attrs.get('file') or getattr(self.instance, 'file', None)
+        original_name = attrs.get('original_name') or getattr(self.instance, 'original_name', '')
+
+        if not payment:
+            raise serializers.ValidationError({'payment': 'Debes asociar este comprobante a un pago.'})
+
+        if not uploaded_file:
+            raise serializers.ValidationError({'file': 'Debes adjuntar el archivo del comprobante.'})
+
+        if not str(original_name).strip():
+            raise serializers.ValidationError({'original_name': 'Debes indicar el nombre del comprobante.'})
 
         if request.user.role == User.Role.RESIDENTE:
             has_assignment = ResidentAssignment.objects.filter(
