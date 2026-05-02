@@ -7,7 +7,6 @@ export const APP_ROUTES = {
 
   residentDashboard: '/resident/dashboard',
   residentPayments: '/resident/pagos',
-  residentProfile: '/resident/perfil',
   residentReservations: '/resident/reservas',
 
   adminDashboard: '/admin/dashboard',

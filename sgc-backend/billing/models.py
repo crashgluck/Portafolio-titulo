@@ -183,3 +183,31 @@ class Reservation(models.Model):
 
 def validate_resident_role(user):
     return user.role == User.Role.RESIDENTE
+
+
+class MeterReading(models.Model):
+    class Type(models.TextChoices):
+        WATER = 'agua', 'Agua'
+        ELECTRICITY = 'luz', 'Luz'
+        GAS = 'gas', 'Gas'
+        HEATING = 'calefaccion', 'Calefacción'
+
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='meter_readings')
+    reading_type = models.CharField(max_length=20, choices=Type.choices, default=Type.WATER)
+    previous_reading = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    current_reading = models.DecimalField(max_digits=10, decimal_places=2)
+    consumption = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
+    date_recorded = models.DateField(default=timezone.localdate)
+    status = models.CharField(max_length=20, default='registrado')
+
+    class Meta:
+        ordering = ('-date_recorded',)
+
+    def __str__(self):
+        return f'{self.unit} - {self.reading_type} - {self.current_reading}'
+
+    def save(self, *args, **kwargs):
+        # Calculamos el consumo automáticamente en el backend por seguridad
+        if self.current_reading and self.previous_reading is not None:
+            self.consumption = self.current_reading - self.previous_reading
+        super().save(*args, **kwargs)

@@ -2,14 +2,16 @@ import { useState, useMemo, useEffect, useCallback } from 'react'
 import useAuth from '@features/auth/hooks/useAuth'
 import useCondominium from '@features/condominium-management/hooks/useCondominium'
 import DataTable from '@shared/ui/DataTable'
-import { listUnitsRequest } from '@features/condominium-management/api/billing.api'
-import { meterReadingsMock, readingTypes } from '../data/conserjeDashboardData'
+// Importamos listMeterReadingsRequest para descargar la tabla real
+import { listUnitsRequest, createMeterReadingRequest, listMeterReadingsRequest } from '@features/condominium-management/api/billing.api'
+import { readingTypes } from '../data/conserjeDashboardData'
 
 const IngresoMedidores = () => {
   const { accessToken } = useAuth()
   const { condominiums, activeCondominiumId, setActiveCondominium } = useCondominium()
 
-  const [readings, setReadings] = useState(meterReadingsMock)
+  // 1. Empezamos con un array vacío en lugar de usar los Mocks
+  const [rawReadings, setRawReadings] = useState([])
   const [units, setUnits] = useState([])
   const [loadingUnits, setLoadingUnits] = useState(false)
   const [error, setError] = useState('')
@@ -19,36 +21,63 @@ const IngresoMedidores = () => {
   const [type, setType] = useState(readingTypes[0].value)
   const [currentReading, setCurrentReading] = useState('')
 
-  const loadUnits = useCallback(async () => {
+  const loadUnitsAndReadings = useCallback(async () => {
     if (!accessToken) return
     setLoadingUnits(true)
     setError('')
 
     try {
-      const data = await listUnitsRequest(accessToken)
-      setUnits(Array.isArray(data) ? data : [])
+      // 2. Cargamos tanto las unidades como las lecturas reales al mismo tiempo
+      const [unitsData, readingsData] = await Promise.all([
+        listUnitsRequest(accessToken),
+        listMeterReadingsRequest(accessToken)
+      ])
+      setUnits(Array.isArray(unitsData) ? unitsData : [])
+      setRawReadings(Array.isArray(readingsData) ? readingsData : [])
     } catch (requestError) {
       setUnits([])
-      setError(requestError.message || 'No se pudieron cargar las unidades.')
+      setRawReadings([])
+      setError(requestError.message || 'Error al cargar los datos del servidor.')
     } finally {
       setLoadingUnits(false)
     }
   }, [accessToken])
 
   useEffect(() => {
-    loadUnits()
-  }, [loadUnits])
+    loadUnitsAndReadings()
+  }, [loadUnitsAndReadings])
 
   const availableUnits = useMemo(() => {
     if (!activeCondominiumId) return []
     return units.filter((unit) => String(unit.condominium) === String(activeCondominiumId))
   }, [units, activeCondominiumId])
 
+  // 3. Filtramos y damos formato a las lecturas para que muestren "Depto XX" en vez del ID
+  const displayReadings = useMemo(() => {
+    if (!activeCondominiumId) return []
+    
+    // Filtramos solo las lecturas de las unidades de este edificio
+    const condoReadings = rawReadings.filter(reading => 
+      availableUnits.some(unit => String(unit.id) === String(reading.unit))
+    )
+
+    // Le agregamos la etiqueta bonita (Depto) a cada fila
+    return condoReadings.map(reading => {
+      const unitObj = availableUnits.find(u => String(u.id) === String(reading.unit))
+      return {
+        ...reading,
+        unitLabel: unitObj?.number ? `Depto ${unitObj.number}` : `Unidad #${reading.unit}`,
+        // Aseguramos que la primera letra del tipo sea mayúscula para que se vea mejor
+        typeLabel: reading.type.charAt(0).toUpperCase() + reading.type.slice(1)
+      }
+    })
+  }, [rawReadings, availableUnits, activeCondominiumId])
+
   useEffect(() => {
     setSelectedUnitId('')
   }, [activeCondominiumId])
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     setError('')
     setSuccess('')
@@ -63,48 +92,36 @@ const IngresoMedidores = () => {
       return
     }
 
-    const unitObject = units.find((unit) => String(unit.id) === String(selectedUnitId))
-    const unitLabel = unitObject?.number ? `Depto ${unitObject.number}` : `Unidad #${selectedUnitId}`
+    try {
+      const payload = {
+        unit: selectedUnitId,
+        type: type,
+        currentReading: Number(currentReading),
+      }
 
-    const previousReading = Math.max(0, Number(currentReading) - Math.floor(Math.random() * 20 + 1))
-    const consumption = Number(currentReading) - previousReading
+      await createMeterReadingRequest(payload, accessToken)
 
-    const newReading = {
-      id: `lec-${Date.now()}`,
-      unit: unitLabel,
-      type,
-      previousReading,
-      currentReading: Number(currentReading),
-      consumption,
-      dateRecorded: new Date().toISOString().split('T')[0],
-      status: 'registrado',
+      setSuccess('Lectura registrada correctamente en la base de datos.')
+      setSelectedUnitId('')
+      setCurrentReading('')
+      
+      // 4. Volvemos a pedir las lecturas al backend para que la tabla se actualice sola
+      const updatedReadings = await listMeterReadingsRequest(accessToken)
+      setRawReadings(Array.isArray(updatedReadings) ? updatedReadings : [])
+      
+    } catch (requestError) {
+      setError(requestError.message || 'Error al guardar la lectura en el servidor.')
     }
-
-    setReadings((previous) => [newReading, ...previous])
-    setSelectedUnitId('')
-    setCurrentReading('')
-    setSuccess('Lectura registrada correctamente.')
   }
 
+  // 5. Ajustamos las columnas para usar el unitLabel y typeLabel que creamos en el useMemo
   const readingColumns = [
-    { header: 'Unidad', accessor: 'unit' },
-    { header: 'Servicio', accessor: 'type' },
+    { header: 'Unidad', accessor: 'unitLabel' },
+    { header: 'Servicio', accessor: 'typeLabel' },
     { header: 'Lectura anterior', accessor: 'previousReading' },
     { header: 'Lectura actual', accessor: (row) => <span className="font-bold text-emerald-700">{row.currentReading}</span> },
     { header: 'Consumo', accessor: (row) => <span className="font-bold text-amber-700">{row.consumption}</span> },
     { header: 'Fecha', accessor: 'dateRecorded' },
-    {
-      header: 'Accion',
-      accessor: (row) => (
-        <button
-          type="button"
-          onClick={() => setReadings((previous) => previous.filter((item) => item.id !== row.id))}
-          className="rounded-md border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
-        >
-          Eliminar
-        </button>
-      ),
-    },
   ]
 
   return (
@@ -188,13 +205,13 @@ const IngresoMedidores = () => {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-md font-bold text-stone-900">Registros del mes</h3>
-          <span className="rounded-full bg-stone-200 px-3 py-1 text-xs font-bold text-stone-600">{readings.length} ingresos</span>
+          <span className="rounded-full bg-stone-200 px-3 py-1 text-xs font-bold text-stone-600">{displayReadings.length} ingresos</span>
         </div>
 
         <DataTable
           columns={readingColumns}
-          data={readings}
-          emptyMessage="No hay lecturas registradas."
+          data={displayReadings}
+          emptyMessage="No hay lecturas registradas para este edificio."
           rowKey="id"
           title="Registros de medidores"
         />

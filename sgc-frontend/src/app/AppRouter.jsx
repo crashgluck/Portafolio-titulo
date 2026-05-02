@@ -13,7 +13,6 @@ import RegisterPage from '@pages/RegisterPage'
 
 import ResidentDashboardPage from '@pages/ResidentDashboardPage'
 import ResidentPaymentsPage from '@pages/ResidentPaymentsPage'
-import ResidentProfilePage from '@pages/ResidentProfilePage'
 import ResidentReservationsPage from '@pages/ResidentReservationsPage'
 
 import ConserjeDashboardPage from '@pages/ConserjeDashboardPage'
@@ -49,7 +48,6 @@ const AppRouter = () => {
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.residente]} />}>
         <Route path={APP_ROUTES.residentDashboard} element={<ResidentDashboardPage />} />
         <Route path={APP_ROUTES.residentPayments} element={<ResidentPaymentsPage />} />
-        <Route path={APP_ROUTES.residentProfile} element={<ResidentProfilePage />} />
         <Route path={APP_ROUTES.residentReservations} element={<ResidentReservationsPage />} />
       </Route>
 
