@@ -7,7 +7,15 @@ const loadAuthSession = () => {
       return null
     }
 
-    return JSON.parse(rawValue)
+    const parsed = JSON.parse(rawValue)
+
+    // Limpia sesiones obsoletas de cuentas pendientes de aprobacion.
+    if (parsed?.user?.is_active === false) {
+      localStorage.removeItem(AUTH_STORAGE_KEY)
+      return null
+    }
+
+    return parsed
   } catch {
     return null
   }

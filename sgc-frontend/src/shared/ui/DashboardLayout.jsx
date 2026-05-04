@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import useAuth from '@features/auth/hooks/useAuth'
+import { getEconomicIndicatorsRequest } from '@shared/api/public.api'
 import backgroundImage from '../../assets/condominio.jpg'
 
 const iconByLabel = {
@@ -93,6 +94,7 @@ const getIconForItem = (item) => {
 const DashboardLayout = ({ children, userRole, userName, title, navItems = [] }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
+  const [indicators, setIndicators] = useState({ uf: null, utm: null })
 
   const safeUserName = userName?.trim() || 'Usuario SGC'
   const safeRole = userRole?.trim() || 'Perfil'
@@ -113,6 +115,41 @@ const DashboardLayout = ({ children, userRole, userName, title, navItems = [] })
     mediaQuery.addEventListener('change', listener)
     return () => mediaQuery.removeEventListener('change', listener)
   }, [])
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadIndicators = async () => {
+      try {
+        const response = await getEconomicIndicatorsRequest()
+        if (!mounted) return
+        setIndicators({
+          uf: response?.uf?.value ?? null,
+          utm: response?.utm?.value ?? null,
+        })
+      } catch {
+        if (!mounted) return
+        setIndicators({ uf: null, utm: null })
+      }
+    }
+
+    loadIndicators()
+    const interval = window.setInterval(loadIndicators, 10 * 60 * 1000)
+    return () => {
+      mounted = false
+      window.clearInterval(interval)
+    }
+  }, [])
+
+  const formatIndicator = (value) => {
+    if (value === null || value === undefined) {
+      return '-'
+    }
+    return new Intl.NumberFormat('es-CL', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value)
+  }
 
   const normalizedNavItems = useMemo(() => {
     if (!Array.isArray(navItems) || navItems.length === 0) {
@@ -163,6 +200,9 @@ const DashboardLayout = ({ children, userRole, userName, title, navItems = [] })
               <div className="min-w-0">
                 <p className="m-0 truncate text-sm font-semibold uppercase tracking-wide text-stone-500">{safeRole}</p>
                 <h1 className="m-0 truncate text-base font-black text-stone-900 sm:text-lg">{safeTitle}</h1>
+                <p className="m-0 mt-0.5 text-[11px] font-semibold text-stone-500">
+                  UF: {formatIndicator(indicators.uf)} | UTM: {formatIndicator(indicators.utm)}
+                </p>
               </div>
             </div>
 

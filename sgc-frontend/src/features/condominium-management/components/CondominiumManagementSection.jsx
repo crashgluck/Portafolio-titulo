@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import useAuth from '@features/auth/hooks/useAuth'
+import GoogleMapPicker from '@shared/ui/GoogleMapPicker'
 import useCondominium from '../hooks/useCondominium'
 import {
   createCommonSpaceRequest,
@@ -13,7 +14,7 @@ import {
   listUsersRequest,
 } from '../api/billing.api'
 
-const initialCondominiumForm = { name: '', address: '', city: '' }
+const initialCondominiumForm = { name: '', address: '', city: '', latitude: '', longitude: '' }
 const initialUnitForm = { number: '', floor: '', proration_factor: '1.0000' }
 const initialAssignmentForm = { user: '', unit: '', start_date: '', is_owner: false, is_primary: true, is_active: true }
 const initialCommonSpaceForm = { name: '', space_type: '', block_duration: 60, is_active: true }
@@ -45,6 +46,7 @@ const CondominiumManagementSection = () => {
   const [isSavingUnit, setIsSavingUnit] = useState(false)
   const [isSavingAssignment, setIsSavingAssignment] = useState(false)
   const [isSavingCommonSpace, setIsSavingCommonSpace] = useState(false)
+  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 
   const filteredUnits = useMemo(() => {
     if (!activeCondominiumId) {
@@ -126,7 +128,14 @@ const CondominiumManagementSection = () => {
     setError('')
 
     try {
-      const created = await createCondominiumRequest(condominiumForm, accessToken)
+      const created = await createCondominiumRequest(
+        {
+          ...condominiumForm,
+          latitude: condominiumForm.latitude === '' ? null : Number(condominiumForm.latitude),
+          longitude: condominiumForm.longitude === '' ? null : Number(condominiumForm.longitude),
+        },
+        accessToken,
+      )
       setCondominiumForm(initialCondominiumForm)
       await reloadCondominiums()
       if (created?.id) {
@@ -271,6 +280,28 @@ const CondominiumManagementSection = () => {
             </option>
           ))}
         </select>
+
+        {activeCondominium && (
+          <div className="mt-4 rounded-lg border border-stone-200 bg-stone-50 p-3">
+            <p className="mb-2 text-sm font-semibold text-stone-800">Ubicacion del condominio activo</p>
+            <p className="mb-2 text-xs text-stone-600">
+              {activeCondominium.address}
+              {activeCondominium.city ? `, ${activeCondominium.city}` : ''}
+            </p>
+            <div className="mb-2 grid grid-cols-2 gap-2">
+              <input value={activeCondominium.latitude ?? ''} readOnly className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs" />
+              <input value={activeCondominium.longitude ?? ''} readOnly className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs" />
+            </div>
+            <GoogleMapPicker
+              apiKey={googleMapsApiKey}
+              latitude={activeCondominium.latitude}
+              longitude={activeCondominium.longitude}
+              addressQuery={`${activeCondominium.address || ''} ${activeCondominium.city || ''}`.trim()}
+              readOnly
+              heightClassName="h-56"
+            />
+          </div>
+        )}
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
@@ -298,6 +329,33 @@ const CondominiumManagementSection = () => {
               placeholder="Ciudad"
               className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
             />
+            <GoogleMapPicker
+              apiKey={googleMapsApiKey}
+              latitude={condominiumForm.latitude}
+              longitude={condominiumForm.longitude}
+              addressQuery={`${condominiumForm.address || ''} ${condominiumForm.city || ''}`.trim()}
+              onLocationChange={({ lat, lng }) =>
+                setCondominiumForm((prev) => ({ ...prev, latitude: String(lat), longitude: String(lng) }))
+              }
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                step="0.0000001"
+                value={condominiumForm.latitude}
+                onChange={(event) => setCondominiumForm((prev) => ({ ...prev, latitude: event.target.value }))}
+                placeholder="Latitud"
+                className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                step="0.0000001"
+                value={condominiumForm.longitude}
+                onChange={(event) => setCondominiumForm((prev) => ({ ...prev, longitude: event.target.value }))}
+                placeholder="Longitud"
+                className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+              />
+            </div>
             <button
               type="submit"
               disabled={isSavingCondominium}

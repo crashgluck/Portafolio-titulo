@@ -5,7 +5,11 @@ import { getHomeRouteByRole } from '../model/roleRedirect'
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
   const location = useLocation()
-  const { hasRole, isAuthenticated, user } = useAuth()
+  const { hasRole, isAuthenticated, isAccountApproved, user } = useAuth()
+
+  if (user && !isAccountApproved) {
+    return <Navigate to={APP_ROUTES.registerPending} replace />
+  }
 
   if (!isAuthenticated) {
     return <Navigate to={APP_ROUTES.login} state={{ from: location }} replace />

@@ -10,6 +10,7 @@ import WelcomePage from '@pages/WelcomePage'
 
 import LoginPage from '@pages/LoginPage'
 import RegisterPage from '@pages/RegisterPage'
+import RegisterPendingPage from '@pages/RegisterPendingPage'
 
 import ResidentDashboardPage from '@pages/ResidentDashboardPage'
 import ResidentPaymentsPage from '@pages/ResidentPaymentsPage'
@@ -43,6 +44,7 @@ const AppRouter = () => {
       <Route element={<PublicOnlyRoute />}>
         <Route path={APP_ROUTES.login} element={<LoginPage />} />
         <Route path={APP_ROUTES.register} element={<RegisterPage />} />
+        <Route path={APP_ROUTES.registerPending} element={<RegisterPendingPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={[USER_ROLES.residente]} />}>

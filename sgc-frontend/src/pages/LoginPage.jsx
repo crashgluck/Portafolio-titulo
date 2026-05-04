@@ -17,6 +17,7 @@ const LoginPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const from = location.state?.from?.pathname
+  const infoMessage = location.state?.message
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -28,6 +29,15 @@ const LoginPage = () => {
       const fallbackRoute = getHomeRouteByRole(session?.user?.role)
       navigate(from || fallbackRoute, { replace: true })
     } catch (submitError) {
+      const normalizedMessage = String(submitError?.message || '').toLowerCase()
+      if (
+        normalizedMessage.includes('inactivo')
+        || normalizedMessage.includes('revision')
+        || normalizedMessage.includes('aprobada')
+      ) {
+        navigate(APP_ROUTES.registerPending, { replace: true })
+        return
+      }
       setError(submitError.message || 'No fue posible iniciar sesion.')
     } finally {
       setIsSubmitting(false)
@@ -48,6 +58,11 @@ const LoginPage = () => {
       }
     >
       <form onSubmit={handleSubmit} className="animate-fade-in">
+        {infoMessage && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+            {infoMessage}
+          </div>
+        )}
         <FormInput
           label="Correo electronico"
           type="email"

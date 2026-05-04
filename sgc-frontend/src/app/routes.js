@@ -3,6 +3,7 @@ export const APP_ROUTES = {
   home: '/',
   login: '/login',
   register: '/register',
+  registerPending: '/registro-en-revision',
   unauthorized: '/unauthorized',
 
   residentDashboard: '/resident/dashboard',

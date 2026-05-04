@@ -5,6 +5,8 @@ import { clearAuthSession, loadAuthSession, saveAuthSession } from '../model/aut
 
 const AuthContext = createContext(null)
 
+const isUserApproved = (user) => user?.is_active !== false
+
 const normalizeUserRole = (user) => {
   if (!user?.role) {
     return USER_ROLES.residente
@@ -46,10 +48,9 @@ const AuthProvider = ({ children }) => {
 
   const register = useCallback(
     async (payload) => {
-      const response = await authService.register(payload)
-      return setNewSession(response)
+      return authService.register(payload)
     },
-    [setNewSession],
+    [],
   )
 
   const logout = useCallback(() => {
@@ -62,7 +63,8 @@ const AuthProvider = ({ children }) => {
       user: session?.user || null,
       accessToken: session?.access || null,
       refreshToken: session?.refresh || null,
-      isAuthenticated: Boolean(session?.access),
+      isAuthenticated: Boolean(session?.access) && isUserApproved(session?.user),
+      isAccountApproved: isUserApproved(session?.user),
       hasRole: (roles = []) => {
         if (!session?.user) {
           return false

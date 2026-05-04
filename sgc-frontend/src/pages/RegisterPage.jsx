@@ -2,17 +2,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import AuthLayout from '@features/auth/components/AuthLayout'
 import useAuth from '@features/auth/hooks/useAuth'
-import { USER_ROLES } from '@features/auth/model/auth.constants'
-import { getHomeRouteByRole } from '@features/auth/model/roleRedirect'
 import FormInput from '@shared/ui/FormInput'
 import { APP_ROUTES } from '@app/routes'
-
-const roleOptions = [
-  { value: USER_ROLES.residente, label: 'Residente' },
-  { value: USER_ROLES.conserje, label: 'Conserje' },
-  { value: USER_ROLES.admin, label: 'Administrador' },
-  { value: USER_ROLES.superadmin, label: 'Super Admin' },
-]
 
 const RegisterPage = () => {
   const navigate = useNavigate()
@@ -25,7 +16,6 @@ const RegisterPage = () => {
     email: '',
     password: '',
     passwordConfirmation: '',
-    role: USER_ROLES.residente,
   })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -46,8 +36,8 @@ const RegisterPage = () => {
     setIsSubmitting(true)
 
     try {
-      const session = await register(formData)
-      navigate(getHomeRouteByRole(session?.user?.role), { replace: true })
+      await register(formData)
+      navigate(APP_ROUTES.registerPending, { replace: true })
     } catch (submitError) {
       setError(submitError.message || 'No fue posible registrar la cuenta.')
     } finally {
@@ -99,28 +89,12 @@ const RegisterPage = () => {
           required
         />
 
-        <label htmlFor="role" className="mb-1.5 text-sm font-semibold text-stone-700 flex items-center gap-1">
-          Rol
-        </label>
-        <select
-          id="role"
-          value={formData.role}
-          onChange={handleChange('role')}
-          className="input-base mb-4 bg-stone-50"
-        >
-          {roleOptions.map((role) => (
-            <option key={role.value} value={role.value}>
-              {role.label}
-            </option>
-          ))}
-        </select>
-
         <FormInput
           label="Contrasena"
           type="password"
           value={formData.password}
           onChange={handleChange('password')}
-          placeholder="Minimo 8 caracteres"
+          placeholder="Minimo 6 caracteres, con letra y numero"
           required
         />
         <FormInput
@@ -137,7 +111,6 @@ const RegisterPage = () => {
             {error}
           </div>
         )}
-
         <button
           type="submit"
           disabled={isSubmitting}

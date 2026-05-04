@@ -4,7 +4,11 @@ import { APP_ROUTES } from '@app/routes'
 import { getHomeRouteByRole } from '../model/roleRedirect'
 
 const HomeRedirect = () => {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, isAccountApproved, user } = useAuth()
+
+  if (user && !isAccountApproved) {
+    return <Navigate to={APP_ROUTES.registerPending} replace />
+  }
 
   if (!isAuthenticated) {
     return <Navigate to={APP_ROUTES.login} replace />
