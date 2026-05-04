@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .permissions import IsSuperAdmin
+from .permissions import IsAdminOrSuperAdmin
 from .models import User
 from .serializers import (
     AuthResponseSerializer,
@@ -22,8 +22,13 @@ class RegisterAPIView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        payload = AuthResponseSerializer.build_for_user(user)
-        return Response(payload, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                'detail': 'Registro recibido. Tu cuenta quedo pendiente de aprobacion por administracion.',
+                'user': UserSerializer(user).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class LoginAPIView(APIView):
@@ -41,7 +46,7 @@ class RefreshTokenAPIView(TokenRefreshView):
 
 
 class UserListCreateAPIView(generics.ListCreateAPIView):
-    permission_classes = (IsSuperAdmin,)
+    permission_classes = (IsAdminOrSuperAdmin,)
     queryset = User.objects.all().order_by('id')
 
     def get_serializer_class(self):
@@ -51,7 +56,7 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
 
 
 class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (IsSuperAdmin,)
+    permission_classes = (IsAdminOrSuperAdmin,)
     queryset = User.objects.all()
 
     def get_serializer_class(self):

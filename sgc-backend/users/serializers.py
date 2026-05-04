@@ -14,12 +14,12 @@ def normalize_required_text(value, field_label):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
-    password_confirmation = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=6)
+    password_confirmation = serializers.CharField(write_only=True, min_length=6)
 
     class Meta:
         model = User
-        fields = ('email', 'rut', 'password', 'password_confirmation', 'first_name', 'last_name', 'role')
+        fields = ('email', 'rut', 'password', 'password_confirmation', 'first_name', 'last_name')
 
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():
@@ -48,7 +48,12 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirmation')
         password = validated_data.pop('password')
-        user = User.objects.create_user(password=password, **validated_data)
+        user = User.objects.create_user(
+            password=password,
+            role=User.Role.RESIDENTE,
+            is_active=False,
+            **validated_data,
+        )
         return user
 
 
@@ -64,7 +69,7 @@ class LoginSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError('Credenciales invalidas.')
         if not user.is_active:
-            raise serializers.ValidationError('Usuario inactivo.')
+            raise serializers.ValidationError('Tu cuenta esta en revision y debe ser aprobada.')
 
         attrs['user'] = user
         return attrs
@@ -77,8 +82,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
-    password_confirmation = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=6)
+    password_confirmation = serializers.CharField(write_only=True, min_length=6)
 
     class Meta:
         model = User
@@ -115,8 +120,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8, required=False, allow_blank=True)
-    password_confirmation = serializers.CharField(write_only=True, min_length=8, required=False, allow_blank=True)
+    password = serializers.CharField(write_only=True, min_length=6, required=False, allow_blank=True)
+    password_confirmation = serializers.CharField(write_only=True, min_length=6, required=False, allow_blank=True)
 
     class Meta:
         model = User

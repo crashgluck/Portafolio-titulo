@@ -21,7 +21,7 @@ from .models import (
 class CondominiumSerializer(serializers.ModelSerializer):
     class Meta:
         model = Condominium
-        fields = ('id', 'name', 'address', 'city', 'is_active')
+        fields = ('id', 'name', 'address', 'city', 'latitude', 'longitude', 'is_active')
 
 
 class UnitSerializer(serializers.ModelSerializer):

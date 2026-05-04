@@ -5,7 +5,7 @@ from users.models import User
 
 
 @pytest.mark.django_db
-def test_register_creates_user_and_returns_tokens():
+def test_register_creates_pending_resident_user():
     client = APIClient()
     password = 'SgcSecure2026!'
 
@@ -17,17 +17,17 @@ def test_register_creates_user_and_returns_tokens():
             'password_confirmation': password,
             'first_name': 'Nuevo',
             'last_name': 'Usuario',
-            'role': 'admin',
         },
         format='json',
     )
 
     assert response.status_code == 201
     assert response.data['user']['email'] == 'nuevo@correo.com'
-    assert response.data['user']['role'] == 'admin'
-    assert 'access' in response.data
-    assert 'refresh' in response.data
-    assert User.objects.filter(email='nuevo@correo.com', role='admin').exists()
+    assert response.data['user']['role'] == 'residente'
+    assert response.data['user']['is_active'] is False
+    assert 'access' not in response.data
+    assert 'refresh' not in response.data
+    assert User.objects.filter(email='nuevo@correo.com', role='residente', is_active=False).exists()
 
 
 @pytest.mark.django_db

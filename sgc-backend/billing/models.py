@@ -9,6 +9,8 @@ class Condominium(models.Model):
     name = models.CharField(max_length=150)
     address = models.CharField(max_length=255, default='')
     city = models.CharField(max_length=120, blank=True)
+    latitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
