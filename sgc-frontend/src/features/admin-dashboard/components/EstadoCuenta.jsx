@@ -4,8 +4,8 @@ import useCondominium from '@features/condominium-management/hooks/useCondominiu
 import { listUnitsRequest } from '@features/condominium-management/api/billing.api'
 import { commonExpensesMock } from '../data/adminDashboardData'
 import { formatCurrencyCLP } from '@shared/lib/format'
-import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const EstadoCuenta = () => {
   const { accessToken } = useAuth()
@@ -109,7 +109,7 @@ const EstadoCuenta = () => {
       ['Enero 2026', 'Pago recibido - Transferencia', `+${formatCurrencyCLP(selectedUnitData.amount)}`, 'Aprobado'],
     ]
 
-    doc.autoTable({
+    autoTable(doc,{
       startY: 75,
       head: [['Fecha', 'Descripcion', 'Monto', 'Estado']],
       body: tableData,
