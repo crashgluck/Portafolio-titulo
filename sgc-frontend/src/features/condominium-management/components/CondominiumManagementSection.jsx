@@ -441,6 +441,7 @@ const CondominiumManagementSection = () => {
               Es residente principal
             </label>
 
+
             <button
               type="submit"
               disabled={isSavingAssignment}
@@ -461,22 +462,32 @@ const CondominiumManagementSection = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredAssignments.map((assignment) => (
-                  <tr key={assignment.id} className="border-t border-stone-200">
-                    <td className="px-3 py-2">#{assignment.user}</td>
-                    <td className="px-3 py-2">#{assignment.unit}</td>
-                    <td className="px-3 py-2">{assignment.start_date}</td>
-                    <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => onDeleteAssignment(assignment.id)}
-                        className="text-xs font-semibold text-red-700 hover:underline"
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {filteredAssignments.map((assignment) => {
+
+                  const userObj = residentUsers.find((u) => u.id === assignment.user)
+                  const userName = userObj ? `${userObj.first_name || ''} ${userObj.last_name || ''}`.trim() || userObj.email : `Usuario #${assignment.user}`
+                  
+
+                  const unitObj = units.find((u) => u.id === assignment.unit)
+                  const unitNumber = unitObj ? `Depto ${unitObj.number}` : `Unidad #${assignment.unit}`
+
+                  return (
+                    <tr key={assignment.id} className="border-t border-stone-200">
+                      <td className="px-3 py-2 font-medium">{userName}</td>
+                      <td className="px-3 py-2 text-stone-600">{unitNumber}</td>
+                      <td className="px-3 py-2 text-stone-600">{assignment.start_date}</td>
+                      <td className="px-3 py-2">
+                        <button
+                          type="button"
+                          onClick={() => onDeleteAssignment(assignment.id)}
+                          className="text-xs font-semibold text-red-700 hover:text-red-900 hover:underline"
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
                 {!filteredAssignments.length && (
                   <tr>
                     <td className="px-3 py-3 text-stone-500" colSpan={4}>

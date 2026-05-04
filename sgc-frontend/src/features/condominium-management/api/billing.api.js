@@ -10,6 +10,7 @@ const BILLING_ENDPOINTS = {
   paymentReceipts: '/v1/billing/payment-receipts/',
   commonSpaces: '/v1/billing/common-spaces/',
   users: '/v1/users/',
+  meterReadings: '/v1/billing/meter-readings/',
 }
 
 const buildQuery = (params = {}) => {
@@ -67,6 +68,16 @@ const createPaymentReceiptRequest = (payload, accessToken) => {
 
 const listUsersRequest = (accessToken) => apiGet(BILLING_ENDPOINTS.users, { accessToken })
 
+// --- NUEVAS FUNCIONES DE MEDIDORES ---
+const listMeterReadingsRequest = (accessToken, params = {}) => apiGet(`${BILLING_ENDPOINTS.meterReadings}${buildQuery(params)}`, { accessToken })
+const createMeterReadingRequest = (payload, accessToken) => apiPost(BILLING_ENDPOINTS.meterReadings, payload, { accessToken })
+
+const closeBillingPeriodRequest = (periodId, accessToken) => 
+  apiPost(`${BILLING_ENDPOINTS.billingPeriods}${periodId}/close-period/`, {}, { accessToken })
+
+const createBillingPeriodRequest = (payload, accessToken) => 
+  apiPost(BILLING_ENDPOINTS.billingPeriods, payload, { accessToken })
+
 export {
   BILLING_ENDPOINTS,
   createPaymentReceiptRequest,
@@ -86,4 +97,8 @@ export {
   listUnitsRequest,
   listUsersRequest,
   patchPaymentRequest,
+  listMeterReadingsRequest,
+  createMeterReadingRequest,
+  closeBillingPeriodRequest,
+  createBillingPeriodRequest,
 }

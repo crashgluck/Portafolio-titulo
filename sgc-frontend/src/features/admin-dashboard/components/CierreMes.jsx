@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import useAuth from '@features/auth/hooks/useAuth'
 import useCondominium from '@features/condominium-management/hooks/useCondominium'
-import { listPaymentsRequest, listUnitsRequest, listBillingPeriodsRequest } from '@features/condominium-management/api/billing.api'
 import { formatCurrencyCLP } from '@shared/lib/format'
+import { listPaymentsRequest, listUnitsRequest, listBillingPeriodsRequest, closeBillingPeriodRequest, createBillingPeriodRequest } from '@features/condominium-management/api/billing.api'
 
 const CierreMes = () => {
   const { accessToken } = useAuth()
@@ -11,6 +11,7 @@ const CierreMes = () => {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [payments, setPayments] = useState([])
   const [units, setUnits] = useState([])
   const [periods, setPeriods] = useState([])
@@ -68,17 +69,59 @@ const CierreMes = () => {
 
   const handleExecute = async () => {
     if (!activeCondominiumId) return
-    setStep(2)
+    
+    const currentPeriod = periods.find((period) => period.status === 'open')
+    
+    if (!currentPeriod) {
+      setError('No hay un periodo abierto para cerrar en este momento.')
+      return
+    }
+
+    setStep(2) 
     setError('')
+    setSuccess('')
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2200))
+      await closeBillingPeriodRequest(currentPeriod.id, accessToken)
+
+      await loadImpactData()
       setStep(3)
-    } catch {
-      setError('Error al procesar el cierre.')
+    } catch (err) {
+      setError(err.message || 'Error crítico al procesar el cierre masivo.')
       setStep(1)
     }
   }
+
+  
+
+  const handleStartInitialPeriod = async () => {
+    if (!activeCondominiumId) return
+    setError('')
+    setSuccess('')
+
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = today.getMonth()
+    
+    const firstDay = new Date(year, month, 1).toISOString().split('T')[0]
+    const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0]
+
+    try {
+      await createBillingPeriodRequest({
+        condominium: activeCondominiumId,
+        start_date: firstDay,
+        end_date: lastDay,
+        status: 'open'
+      }, accessToken)
+      
+      setSuccess('¡Primer periodo iniciado con éxito!')
+      await loadImpactData() 
+    } catch (err) {
+      setError(err.message || 'Error al iniciar el periodo.')
+    }
+  }
+
+  const currentPeriod = periods.find((p) => p.status === 'open' && p.condominium === Number(activeCondominiumId))
 
   return (
     <div className="max-w-3xl space-y-6 animate-fade-in-up">
@@ -129,7 +172,8 @@ const CierreMes = () => {
             </p>
           ) : (
             <>
-              {error && <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+              {error && <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}            
+              {success && <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{success}</div>}
 
               {step === 1 && (
                 <div className="space-y-6">
@@ -153,14 +197,21 @@ const CierreMes = () => {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleExecute}
-                    disabled={loading || impactStats.activeUnits === 0}
-                    className="rounded-xl bg-red-600 px-10 py-3 font-bold text-white shadow-lg shadow-red-200 transition-all hover:bg-red-700 disabled:opacity-60"
-                  >
-                    Ejecutar cierre y emitir cobros
-                  </button>
+                  <div className="mt-8 flex justify-end gap-3 border-t border-stone-200 pt-5">
+                    <button type="button" onClick={() => setStep(1)} className="btn-secondary">
+                      Cancelar
+                    </button>
+                    
+                    {currentPeriod ? (
+                      <button type="button" onClick={handleExecute} className="btn-primary bg-rose-600 hover:bg-rose-700">
+                        Ejecutar cierre y emitir cobros
+                      </button>
+                    ) : (
+                      <button type="button" onClick={handleStartInitialPeriod} className="btn-primary bg-emerald-600 hover:bg-emerald-700">
+                        Iniciar Primer Periodo (Mes Actual)
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 

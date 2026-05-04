@@ -12,10 +12,6 @@ export const residentNavItems = [
     label: 'Pagos',
     to: APP_ROUTES.residentPayments,
   },
-  {
-    label: 'Mi perfil',
-    to: APP_ROUTES.residentProfile,
-  },
   { 
     label: 'Reservas', 
     to: APP_ROUTES.residentReservations,
@@ -50,5 +46,4 @@ export const paymentHistoryColumns = [
   { header: 'Comprobante', accessor: 'comprobante' },
 ]
 
-// Datos mock iniciales del historial de pagos.
-export const paymentHistoryData = paymentHistoryMock
+

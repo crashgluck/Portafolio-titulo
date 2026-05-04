@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from rest_framework import serializers
 from django.utils import timezone
-
+from .models import MeterReading
 from users.models import User
 
 from .models import (
@@ -249,3 +249,16 @@ class ReservationSerializer(serializers.ModelSerializer):
 
         return attrs
 
+
+
+class MeterReadingSerializer(serializers.ModelSerializer):
+    # Mapeamos los nombres del front (camelCase) al back (snake_case)
+    previousReading = serializers.DecimalField(source='previous_reading', max_digits=10, decimal_places=2, required=False)
+    currentReading = serializers.DecimalField(source='current_reading', max_digits=10, decimal_places=2)
+    dateRecorded = serializers.DateField(source='date_recorded', read_only=True)
+    type = serializers.CharField(source='reading_type')
+
+    class Meta:
+        model = MeterReading
+        fields = ['id', 'unit', 'type', 'previousReading', 'currentReading', 'consumption', 'dateRecorded', 'status']
+        read_only_fields = ['id', 'consumption', 'dateRecorded', 'status']
